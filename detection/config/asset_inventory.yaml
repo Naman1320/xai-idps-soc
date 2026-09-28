@@ -1,0 +1,40 @@
+# Asset Inventory for Lab Network
+# Maps IP addresses/subnets to criticality ratings (0.0 - 1.0)
+# Used for composite risk score computation
+
+assets:
+  # Critical assets (servers, domain controllers)
+  - ip: "192.168.1.1"
+    name: "Gateway/Router"
+    criticality: 0.9
+    description: "Main network gateway"
+
+  - ip: "192.168.1.10"
+    name: "Domain Controller / File Server"
+    criticality: 1.0
+    description: "Primary server - highest criticality"
+
+  - ip: "192.168.1.11"
+    name: "Web Server"
+    criticality: 0.8
+    description: "Internal web application server"
+
+  # Standard workstations
+  - ip: "192.168.1.100"
+    name: "Workstation-1"
+    criticality: 0.5
+    description: "Standard user workstation"
+
+  - ip: "192.168.1.101"
+    name: "Workstation-2"
+    criticality: 0.5
+    description: "Standard user workstation"
+
+  # IoT / Low-priority devices
+  - ip: "192.168.1.200"
+    name: "IoT Sensor"
+    criticality: 0.3
+    description: "Low-criticality IoT device"
+
+# Default criticality for IPs not in inventory
+default_criticality: 0.5

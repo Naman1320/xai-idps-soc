@@ -1,0 +1,30 @@
+# Composite Risk Score Weights
+# Formula: risk_score = w1 * ML_confidence + w2 * asset_criticality + w3 * ATT&CK_severity + w4 * threat_intel
+# Weights MUST sum to 1.0
+#
+# The 4-weight formula extends the original 3-weight model by adding threat
+# intelligence reputation (w4) as an actual input to triage prioritization.
+# This is a research contribution: commercial SIEMs compute risk opaquely;
+# this system exposes and documents each component, including the threat-intel
+# signal and its limitations.
+
+weights:
+  ml_confidence: 0.45      # w1: How confident the ML model is in its prediction
+  asset_criticality: 0.25   # w2: How critical the target asset is
+  attack_severity: 0.15     # w3: How severe the ATT&CK technique is
+  threat_intel: 0.15         # w4: Source IP threat reputation (AbuseIPDB confidence)
+
+# Alert thresholds
+thresholds:
+  # Minimum ML confidence to generate an alert (flows below this are considered benign)
+  min_ml_confidence: 0.5
+
+  # Minimum composite risk score to show in the alert queue
+  min_risk_score: 0.3
+
+  # Risk score severity classification
+  severity_levels:
+    critical: 0.85   # risk_score >= 0.85
+    high: 0.65       # risk_score >= 0.65
+    medium: 0.40     # risk_score >= 0.40
+    low: 0.0         # risk_score >= 0.0

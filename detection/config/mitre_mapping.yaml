@@ -1,0 +1,380 @@
+# MITRE ATT&CK Mapping: Dataset Attack Class → ATT&CK Technique
+# Sources:
+#   - MITRE ATT&CK Enterprise Matrix: https://attack.mitre.org/
+#   - CICIDS2017 attack descriptions: Sharafaldin et al., 2018
+#   - UNSW-NB15 attack categories: Moustafa & Slay, 2015
+
+# --- CICIDS2017 Attack Classes ---
+
+cicids2017:
+  "FTP-Patator":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    sub_technique: "T1110.001"
+    sub_technique_name: "Password Guessing"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "FTP brute force login attempts using Patator tool"
+
+  "SSH-Patator":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    sub_technique: "T1110.001"
+    sub_technique_name: "Password Guessing"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "SSH brute force login attempts using Patator tool"
+
+  "DoS Hulk":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "HTTP flood DoS attack using Hulk tool"
+
+  "DoS GoldenEye":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "HTTP flood DoS attack using GoldenEye tool"
+
+  "DoS slowloris":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "Slowloris low-bandwidth DoS attack"
+
+  "DoS Slowhttptest":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "Slow HTTP DoS attack"
+
+  "DDoS":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Distributed Denial of Service attack"
+
+  "PortScan":
+    technique_id: "T1046"
+    technique_name: "Network Service Discovery"
+    tactic: "Discovery"
+    severity: "Medium"
+    severity_score: 0.5
+    description: "Network port scanning for service enumeration"
+
+  "Bot":
+    technique_id: "T1583"
+    technique_name: "Acquire Infrastructure"
+    sub_technique: "T1583.005"
+    sub_technique_name: "Botnet"
+    tactic: "Resource Development"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Botnet command and control traffic"
+
+  "Infiltration":
+    technique_id: "T1071"
+    technique_name: "Application Layer Protocol"
+    tactic: "Command and Control"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Network infiltration via application layer"
+
+  "Web Attack - Brute Force":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "Web application brute force login"
+
+  "Web Attack - XSS":
+    technique_id: "T1059"
+    technique_name: "Command and Scripting Interpreter"
+    sub_technique: "T1059.007"
+    sub_technique_name: "JavaScript"
+    tactic: "Execution"
+    severity: "High"
+    severity_score: 0.8
+    description: "Cross-site scripting attack"
+
+  "Web Attack - Sql Injection":
+    technique_id: "T1190"
+    technique_name: "Exploit Public-Facing Application"
+    tactic: "Initial Access"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "SQL injection attack on web application"
+
+  "Heartbleed":
+    technique_id: "T1190"
+    technique_name: "Exploit Public-Facing Application"
+    tactic: "Initial Access"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "OpenSSL Heartbleed vulnerability exploitation"
+
+# --- UNSW-NB15 Attack Categories ---
+
+unsw_nb15:
+  "Fuzzers":
+    technique_id: "T1190"
+    technique_name: "Exploit Public-Facing Application"
+    tactic: "Initial Access"
+    severity: "Medium"
+    severity_score: 0.6
+    description: "Fuzzing attacks sending random data to find vulnerabilities"
+
+  "Analysis":
+    technique_id: "T1046"
+    technique_name: "Network Service Discovery"
+    tactic: "Discovery"
+    severity: "Medium"
+    severity_score: 0.5
+    description: "Port scans, spam, HTML file penetration analysis"
+
+  "Backdoors":
+    technique_id: "T1059"
+    technique_name: "Command and Scripting Interpreter"
+    tactic: "Execution"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Backdoor access bypassing security mechanisms"
+
+  "DoS":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "Denial of Service attacks"
+
+  "Exploits":
+    technique_id: "T1190"
+    technique_name: "Exploit Public-Facing Application"
+    tactic: "Initial Access"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Exploitation of known software/OS vulnerabilities"
+
+  "Generic":
+    technique_id: "T1499"
+    technique_name: "Endpoint Denial of Service"
+    tactic: "Impact"
+    severity: "Medium"
+    severity_score: 0.6
+    description: "Generic attack techniques targeting block ciphers"
+
+  "Reconnaissance":
+    technique_id: "T1595"
+    technique_name: "Active Scanning"
+    tactic: "Reconnaissance"
+    severity: "Low"
+    severity_score: 0.3
+    description: "Information gathering and reconnaissance activities"
+
+  "Shellcode":
+    technique_id: "T1059"
+    technique_name: "Command and Scripting Interpreter"
+    tactic: "Execution"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Shellcode payload execution"
+
+  "Worms":
+    technique_id: "T1080"
+    technique_name: "Taint Shared Content"
+    tactic: "Lateral Movement"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Self-replicating worm propagation"
+
+# --- CSE-CIC-IDS2018 Attack Classes ---
+# Dataset: Communications Security Establishment (CSE) & Canadian Institute
+#          for Cybersecurity (CIC) — AWS Open Data s3://cse-cic-ids2018/
+# License: Open Data, citation required
+# Note: CIC-IDS2018 uses different label naming than CICIDS2017.
+#       Some labels include tool names and attack variants.
+
+cse_cic_ids2018:
+  # --- DDoS Attacks ---
+  "DDoS attacks-LOIC-HTTP":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Distributed HTTP flood using Low Orbit Ion Cannon (LOIC)"
+
+  "DDOS attack-HOIC":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Distributed HTTP flood using High Orbit Ion Cannon (HOIC)"
+
+  "DDOS attack-LOIC-UDP":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Distributed UDP flood using Low Orbit Ion Cannon (LOIC)"
+
+  # --- DoS Attacks ---
+  "DoS attacks-Hulk":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "HTTP flood DoS attack using Hulk tool"
+
+  "DoS attacks-SlowHTTPTest":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "Slow HTTP header/body DoS attack"
+
+  "DoS attacks-GoldenEye":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "HTTP flood DoS attack using GoldenEye tool"
+
+  "DoS attacks-Slowloris":
+    technique_id: "T1498"
+    technique_name: "Network Denial of Service"
+    sub_technique: "T1498.001"
+    sub_technique_name: "Direct Network Flood"
+    tactic: "Impact"
+    severity: "High"
+    severity_score: 0.9
+    description: "Slowloris slow-connection DoS attack"
+
+  # --- Brute Force Attacks ---
+  "FTP-BruteForce":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    sub_technique: "T1110.001"
+    sub_technique_name: "Password Guessing"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "FTP brute force credential guessing"
+
+  "SSH-Bruteforce":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    sub_technique: "T1110.001"
+    sub_technique_name: "Password Guessing"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "SSH brute force credential guessing"
+
+  "Brute Force -Web":
+    technique_id: "T1110"
+    technique_name: "Brute Force"
+    sub_technique: "T1110.001"
+    sub_technique_name: "Password Guessing"
+    tactic: "Credential Access"
+    severity: "High"
+    severity_score: 0.8
+    description: "Web application brute force login"
+
+  "Brute Force -XSS":
+    technique_id: "T1059"
+    technique_name: "Command and Scripting Interpreter"
+    sub_technique: "T1059.007"
+    sub_technique_name: "JavaScript"
+    tactic: "Execution"
+    severity: "High"
+    severity_score: 0.8
+    description: "Cross-site scripting attack via brute force methods"
+
+  # --- Web Attacks ---
+  "SQL Injection":
+    technique_id: "T1190"
+    technique_name: "Exploit Public-Facing Application"
+    tactic: "Initial Access"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "SQL injection attack on web application"
+
+  # --- Botnet ---
+  "Bot":
+    technique_id: "T1583"
+    technique_name: "Acquire Infrastructure"
+    sub_technique: "T1583.005"
+    sub_technique_name: "Botnet"
+    tactic: "Resource Development"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Botnet command and control traffic (ARES botnet in CIC-IDS2018)"
+
+  # --- Infiltration ---
+  "Infilteration":
+    technique_id: "T1071"
+    technique_name: "Application Layer Protocol"
+    tactic: "Command and Control"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Network infiltration via application layer (CIC-IDS2018 spelling)"
+
+  "Infiltration":
+    technique_id: "T1071"
+    technique_name: "Application Layer Protocol"
+    tactic: "Command and Control"
+    severity: "Critical"
+    severity_score: 1.0
+    description: "Network infiltration via application layer"
+
+# Default mapping for unknown attack classes
+default:
+  technique_id: "T1071"
+  technique_name: "Application Layer Protocol"
+  tactic: "Command and Control"
+  severity: "Medium"
+  severity_score: 0.5
+  description: "Unknown or unmapped attack type"

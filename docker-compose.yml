@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # $0-Cost Cloud Emulation (LocalStack for S3, SQS, CloudWatch)
+  localstack:
+    image: localstack/localstack:latest
+    container_name: xai-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,sqs,cloudwatch
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=0
+    networks:
+      - soc-network
+
+  # Database Service (PostgreSQL)
+  postgres:
+    image: postgres:16-alpine
+    container_name: xai-soc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: socdb
+      POSTGRES_USER: socuser
+      POSTGRES_PASSWORD: socpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - soc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socuser -d socdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Cloud SOC Backend API
+  soc-backend:
+    build:
+      context: ./soc-backend
+      dockerfile: Dockerfile
+    container_name: xai-soc-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://socuser:socpassword@postgres:5432/socdb
+      - SECRET_KEY=xai-idps-soc-super-secret-jwt-key-change-in-production-2025
+      - INGESTION_API_KEY=xai-soc-pipeline-key-cicids2017
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - soc-network
+
+  # Cloud SOC Analyst Dashboard (React)
+  soc-dashboard:
+    build:
+      context: ./soc-dashboard
+      dockerfile: Dockerfile
+    container_name: xai-soc-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - soc-backend
+    networks:
+      - soc-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  soc-network:
+    driver: bridge

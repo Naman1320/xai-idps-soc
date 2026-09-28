@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+*.egg
+
+# Data files (too large for git)
+detection/data/raw/
+detection/data/processed/
+detection/data/models/*.joblib
+detection/data/models/*.pkl
+!detection/data/raw/.gitkeep
+!detection/data/processed/.gitkeep
+!detection/data/models/.gitkeep
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+soc-dashboard/dist/
+soc-dashboard/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# Database & Archives
+*.db
+*.sqlite
+*.sqlite3
+*.zip
+
+# Nested unrelated projects and scratch directories
+soc-backend/app/services/volunteere/
+soc-backend/app/services/CLOUD/
+soc-backend/app/services/major/
+soc-backend/app/services/pythion new/
+
+# OS
+Thumbs.db
+

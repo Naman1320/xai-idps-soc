@@ -1,0 +1,68 @@
+# Geolocation & Threat Intelligence Enrichment Configuration
+# Data sources are publicly available; see license details below.
+
+# ──────────────────────────────────────────────────────────────
+# MaxMind GeoLite2 — Source IP Geolocation
+# ──────────────────────────────────────────────────────────────
+# License: GeoLite2 EULA — free, attribution required, redistribution allowed
+# Signup:  https://www.maxmind.com/en/geolite2/signup (free account + license key)
+# Limits:  No per-query rate limit (local .mmdb file lookups)
+# Caveat:  City/region-level accuracy only; unreliable for VPN/proxy/CGNAT
+geolocation:
+  enabled: true
+  city_db_path: "data/geolite2/GeoLite2-City.mmdb"
+  asn_db_path: "data/geolite2/GeoLite2-ASN.mmdb"
+  # Generate synthetic geo coordinates for private/lab IPs (demo mode)
+  synthetic_geo_enabled: true
+
+# ──────────────────────────────────────────────────────────────
+# AbuseIPDB — Threat Intelligence / IP Reputation
+# ──────────────────────────────────────────────────────────────
+# License: Free API tier
+# Signup:  https://www.abuseipdb.com/register (free account + API key)
+# Limits:  1,000 checks/day on free tier (verify current limits on signup)
+# Note:    API key set via ABUSEIPDB_API_KEY environment variable
+threat_intel:
+  enabled: true
+  provider: "abuseipdb"
+  cache_ttl_hours: 24
+  # AbuseIPDB confidence score >= this threshold → "known bad"
+  known_bad_threshold: 50
+
+# ──────────────────────────────────────────────────────────────
+# High-Risk ASN List (curated from public threat research)
+# ──────────────────────────────────────────────────────────────
+# These ASNs are known for hosting a disproportionate amount of
+# abusive traffic. Being on this list does NOT mean all traffic
+# from these ASNs is malicious — it's used as a contextual signal.
+# Sources: Spamhaus ASN-DROP, public abuse reports, threat research
+high_risk_asns:
+  - 4134     # China Telecom (frequently abused source)
+  - 4837     # China Unicom
+  - 9009     # M247 Europe SRL (bulletproof hosting)
+  - 202425   # IP Volume Inc (bulletproof hosting)
+  - 16276    # OVH SAS (high abuse volume due to scale)
+  - 14061    # DigitalOcean (high abuse volume due to scale)
+  - 63949    # Akamai Connected Cloud (Linode)
+  - 398101   # GoDaddy.com LLC (frequently abused hosting)
+  - 136907   # Huawei Cloud
+  - 45090    # Shenzhen Tencent Computer Systems
+
+# ──────────────────────────────────────────────────────────────
+# Accuracy Caveats (embedded in all geo/threat-intel output)
+# ──────────────────────────────────────────────────────────────
+# These caveats are programmatically included in every enrichment
+# result and should appear in the dashboard UI and research paper.
+caveats:
+  geolocation: >
+    IP geolocation is approximate: ~95% accurate at country level,
+    ~55-80% at city level (MaxMind published figures). Completely
+    unreliable for VPN, proxy, Tor, and CGNAT traffic. Lab dataset
+    IPs (CSE-CIC-IDS2018) are private addresses — geo data is
+    synthetic for demonstration purposes.
+  threat_intel: >
+    AbuseIPDB scores reflect crowd-sourced abuse reports and may
+    contain false positives. A low score does not guarantee an IP
+    is safe; a high score indicates prior reports, not proof of
+    current malicious activity. Free-tier queries are limited to
+    1,000/day.
