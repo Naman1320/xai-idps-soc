@@ -8,10 +8,10 @@ Handles:
 - Dataset-specific preprocessing
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -88,7 +88,9 @@ CIC_IDS2018_LABEL_MAP = {
 }
 
 
-def load_cic_ids2018(data_dir: Optional[Path] = None, sample_frac: Optional[float] = None) -> pd.DataFrame:
+def load_cic_ids2018(
+    data_dir: Path | None = None, sample_frac: float | None = None
+) -> pd.DataFrame:
     """
     Load and merge all CSE-CIC-IDS2018 CSV files.
 
@@ -131,13 +133,16 @@ def load_cic_ids2018(data_dir: Optional[Path] = None, sample_frac: Optional[floa
 
     # Standardize labels
     if "Label" in df.columns:
-        df["Label"] = df["Label"].astype(str).str.strip().map(
-            lambda x: CIC_IDS2018_LABEL_MAP.get(x, x)
+        df["Label"] = (
+            df["Label"]
+            .astype(str)
+            .str.strip()
+            .map(lambda x: CIC_IDS2018_LABEL_MAP.get(x, x))
         )
 
     if sample_frac is not None and 0 < sample_frac < 1:
         df = df.sample(frac=sample_frac, random_state=42).reset_index(drop=True)
-        logger.info(f"Sampled to {len(df)} records ({sample_frac*100:.0f}%)")
+        logger.info(f"Sampled to {len(df)} records ({sample_frac * 100:.0f}%)")
 
     return df
 
@@ -150,7 +155,9 @@ UNSW_NB15_LABEL_COL = "label"
 UNSW_NB15_ATTACK_CAT_COL = "attack_cat"
 
 
-def load_cicids2017(data_dir: Optional[Path] = None, sample_frac: Optional[float] = None) -> pd.DataFrame:
+def load_cicids2017(
+    data_dir: Path | None = None, sample_frac: float | None = None
+) -> pd.DataFrame:
     """
     Load and merge all CICIDS2017 CSV files.
 
@@ -196,18 +203,18 @@ def load_cicids2017(data_dir: Optional[Path] = None, sample_frac: Optional[float
         df.rename(columns={" Label": "Label"}, inplace=True)
 
     # Standardize labels
-    df["Label"] = df["Label"].str.strip().map(
-        lambda x: CICIDS2017_LABEL_MAP.get(x, x)
-    )
+    df["Label"] = df["Label"].str.strip().map(lambda x: CICIDS2017_LABEL_MAP.get(x, x))
 
     if sample_frac is not None and 0 < sample_frac < 1:
         df = df.sample(frac=sample_frac, random_state=42).reset_index(drop=True)
-        logger.info(f"Sampled to {len(df)} records ({sample_frac*100:.0f}%)")
+        logger.info(f"Sampled to {len(df)} records ({sample_frac * 100:.0f}%)")
 
     return df
 
 
-def load_unsw_nb15(data_dir: Optional[Path] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_unsw_nb15(
+    data_dir: Path | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Load UNSW-NB15 training and testing sets.
 
@@ -236,11 +243,11 @@ def load_unsw_nb15(data_dir: Optional[Path] = None) -> Tuple[pd.DataFrame, pd.Da
             f"Expected: {UNSW_NB15_TRAIN_FILE} and {UNSW_NB15_TEST_FILE}"
         )
 
-    logger.info(f"Loading UNSW-NB15 training set...")
+    logger.info("Loading UNSW-NB15 training set...")
     train_df = pd.read_csv(train_path, low_memory=False)
     logger.info(f"  → {len(train_df)} training records")
 
-    logger.info(f"Loading UNSW-NB15 testing set...")
+    logger.info("Loading UNSW-NB15 testing set...")
     test_df = pd.read_csv(test_path, low_memory=False)
     logger.info(f"  → {len(test_df)} testing records")
 
@@ -282,7 +289,9 @@ def clean_dataframe(df: pd.DataFrame, label_col: str = "Label") -> pd.DataFrame:
     # Count and report NaN
     nan_count = df[numeric_cols].isna().sum().sum()
     if nan_count > 0:
-        logger.info(f"Dropping rows with NaN/Infinity values ({nan_count} NaN cells found)")
+        logger.info(
+            f"Dropping rows with NaN/Infinity values ({nan_count} NaN cells found)"
+        )
         df = df.dropna(subset=numeric_cols)
 
     # Remove duplicates
@@ -299,7 +308,9 @@ def clean_dataframe(df: pd.DataFrame, label_col: str = "Label") -> pd.DataFrame:
             df = df.dropna(subset=[label_col])
 
     df = df.reset_index(drop=True)
-    logger.info(f"Cleaning: {initial_len} → {len(df)} records ({initial_len - len(df)} removed)")
+    logger.info(
+        f"Cleaning: {initial_len} → {len(df)} records ({initial_len - len(df)} removed)"
+    )
 
     return df
 
@@ -323,7 +334,7 @@ def get_class_distribution(df: pd.DataFrame, label_col: str = "Label") -> pd.Dat
 
 # ── BETH Host Telemetry Integration ───────────────────────────────────────────
 from detection.preprocessing.load_beth import (
-    load_beth_dataset,
-    extract_beth_features,
     correlate_host_network,
+    extract_beth_features,
+    load_beth_dataset,
 )

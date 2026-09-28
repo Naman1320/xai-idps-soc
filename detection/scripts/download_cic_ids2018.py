@@ -32,7 +32,6 @@ Usage:
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -86,7 +85,9 @@ def check_aws_cli():
     try:
         result = subprocess.run(
             ["aws", "--version"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         if result.returncode == 0:
             logger.info(f"AWS CLI found: {result.stdout.strip()}")
@@ -109,7 +110,9 @@ def list_s3_files():
     try:
         result = subprocess.run(
             ["aws", "s3", "ls", "--no-sign-request", "--recursive", S3_BUCKET],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode == 0:
             print(result.stdout)
@@ -133,7 +136,8 @@ def download_file(s3_key: str, output_dir: Path) -> bool:
     try:
         result = subprocess.run(
             ["aws", "s3", "cp", "--no-sign-request", s3_path, str(local_path)],
-            capture_output=False, timeout=3600,  # 1 hour timeout for large files
+            capture_output=False,
+            timeout=3600,  # 1 hour timeout for large files
         )
         if result.returncode == 0:
             size_mb = local_path.stat().st_size / (1024 * 1024)
@@ -152,17 +156,22 @@ def main():
         description="Download CSE-CIC-IDS2018 dataset from AWS Open Data"
     )
     parser.add_argument(
-        "--list", action="store_true",
-        help="List available files on S3 without downloading"
+        "--list",
+        action="store_true",
+        help="List available files on S3 without downloading",
     )
     parser.add_argument(
-        "--days", nargs="+", choices=list(KNOWN_FILES.keys()) + ["all"],
+        "--days",
+        nargs="+",
+        choices=list(KNOWN_FILES.keys()) + ["all"],
         default=["all"],
-        help="Which days to download (default: all). Use specific day keys for lighter testing."
+        help="Which days to download (default: all). Use specific day keys for lighter testing.",
     )
     parser.add_argument(
-        "--output-dir", type=str, default=None,
-        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})"
+        "--output-dir",
+        type=str,
+        default=None,
+        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})",
     )
     args = parser.parse_args()
 

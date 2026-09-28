@@ -5,23 +5,21 @@ Handles geolocation context and threat intelligence data persistence.
 
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, asc, func
 
 from app.models.alert import Alert, AlertShapFeature
 from app.schemas.alert_schema import (
-    AlertIngestSchema,
-    AlertResponse,
-    AlertListResponse,
     AlertExplanationResponse,
+    AlertIngestSchema,
+    AlertListResponse,
+    AlertResponse,
     AlertShapFeatureResponse,
     PlainLanguageExplanation,
 )
+from sqlalchemy import asc, desc
+from sqlalchemy.orm import Session
 
 
 class AlertService:
-
     @staticmethod
     def ingest_alert(db: Session, data: AlertIngestSchema) -> Alert:
         """
@@ -40,14 +38,20 @@ class AlertService:
             }
         else:
             composite_risk = data.risk_score.composite
-            risk_components = data.risk_score.components.model_dump() if data.risk_score.components else None
+            risk_components = (
+                data.risk_score.components.model_dump()
+                if data.risk_score.components
+                else None
+            )
 
         # Resolve timestamp
         detected_time = datetime.utcnow()
         if data.timestamp:
             if isinstance(data.timestamp, str):
                 try:
-                    detected_time = datetime.fromisoformat(data.timestamp.replace("Z", "+00:00"))
+                    detected_time = datetime.fromisoformat(
+                        data.timestamp.replace("Z", "+00:00")
+                    )
                 except Exception:
                     detected_time = datetime.utcnow()
             elif isinstance(data.timestamp, datetime):
@@ -114,7 +118,9 @@ class AlertService:
             mitre_tactic=mitre_tactic,
             mitre_severity=mitre_severity,
             mitre_description=mitre_desc,
-            asset_criticality=risk_components.get("asset_criticality", 0.5) if risk_components else 0.5,
+            asset_criticality=risk_components.get("asset_criticality", 0.5)
+            if risk_components
+            else 0.5,
             risk_score=round(composite_risk, 4),
             risk_score_components=risk_components,
             # Geolocation
@@ -134,7 +140,10 @@ class AlertService:
             threat_intel_provider=ti_provider,
             # Status
             status="new",
-            ingested_at=datetime.utcnow()
+            ingested_at=datetime.utcnow(),
+            # Dataset & Domain
+            dataset_source=getattr(data, "dataset_source", None) or "CIC-IDS2017",
+            domain=getattr(data, "domain", None) or "network",
         )
 
         db.add(alert)
@@ -148,8 +157,10 @@ class AlertService:
                     alert_id=alert.id,
                     feature_name=contrib.feature,
                     shap_value=round(contrib.shap_value, 4),
-                    feature_value=round(contrib.feature_value, 4) if contrib.feature_value is not None else None,
-                    rank=contrib.rank or (idx + 1)
+                    feature_value=round(contrib.feature_value, 4)
+                    if contrib.feature_value is not None
+                    else None,
+                    rank=contrib.rank or (idx + 1),
                 )
                 db.add(feat_obj)
 
@@ -160,13 +171,15 @@ class AlertService:
     @staticmethod
     def list_alerts(
         db: Session,
-        status: Optional[str] = None,
-        attack_class: Optional[str] = None,
-        severity: Optional[str] = None,
-        source_ip: Optional[str] = None,
-        dest_ip: Optional[str] = None,
-        min_risk: Optional[float] = None,
-        search: Optional[str] = None,
+        status: str | None = None,
+        attack_class: str | None = None,
+        severity: str | None = None,
+        source_ip: str | None = None,
+        dest_ip: str | None = None,
+        min_risk: float | None = None,
+        search: str | None = None,
+        dataset: str | None = None,
+        domain: str | None = None,
         sort_by: str = "risk_score",
         order: str = "desc",
         page: int = 1,
@@ -175,6 +188,8 @@ class AlertService:
         """
         Query alerts with rich filtering, search, sorting and pagination.
         """
+        from sqlalchemy import or_
+
         query = db.query(Alert)
 
         if status:
@@ -189,15 +204,31 @@ class AlertService:
             query = query.filter(Alert.dest_ip.ilike(f"%{dest_ip}%"))
         if min_risk is not None:
             query = query.filter(Alert.risk_score >= min_risk)
+        if dataset:
+            ds_list = [d.strip() for d in dataset.split(",") if d.strip()]
+            if len(ds_list) == 1:
+                query = query.filter(Alert.dataset_source.ilike(f"%{ds_list[0]}%"))
+            elif ds_list:
+                conditions = [Alert.dataset_source.ilike(f"%{d}%") for d in ds_list]
+                query = query.filter(or_(*conditions))
+        if domain:
+            dom_list = [d.strip() for d in domain.split(",") if d.strip()]
+            if len(dom_list) == 1:
+                query = query.filter(Alert.domain.ilike(f"%{dom_list[0]}%"))
+            elif dom_list:
+                conditions = [Alert.domain.ilike(f"%{d}%") for d in dom_list]
+                query = query.filter(or_(*conditions))
         if search:
             search_pattern = f"%{search}%"
             query = query.filter(
-                (Alert.source_ip.ilike(search_pattern)) |
-                (Alert.dest_ip.ilike(search_pattern)) |
-                (Alert.attack_class.ilike(search_pattern)) |
-                (Alert.mitre_technique_id.ilike(search_pattern)) |
-                (Alert.mitre_technique_name.ilike(search_pattern)) |
-                (Alert.geo_source_country.ilike(search_pattern))
+                (Alert.source_ip.ilike(search_pattern))
+                | (Alert.dest_ip.ilike(search_pattern))
+                | (Alert.attack_class.ilike(search_pattern))
+                | (Alert.mitre_technique_id.ilike(search_pattern))
+                | (Alert.mitre_technique_name.ilike(search_pattern))
+                | (Alert.geo_source_country.ilike(search_pattern))
+                | (Alert.dataset_source.ilike(search_pattern))
+                | (Alert.domain.ilike(search_pattern))
             )
 
         total = query.count()
@@ -219,20 +250,16 @@ class AlertService:
         alert_responses = [AlertResponse.model_validate(a) for a in alerts]
 
         return AlertListResponse(
-            alerts=alert_responses,
-            total=total,
-            page=page,
-            pages=pages,
-            limit=limit
+            alerts=alert_responses, total=total, page=page, pages=pages, limit=limit
         )
 
     @staticmethod
-    def get_alert_by_id(db: Session, alert_id: str) -> Optional[Alert]:
+    def get_alert_by_id(db: Session, alert_id: str) -> Alert | None:
         """Fetch alert with full relationships."""
         return db.query(Alert).filter(Alert.id == alert_id).first()
 
     @staticmethod
-    def update_status(db: Session, alert_id: str, new_status: str) -> Optional[Alert]:
+    def update_status(db: Session, alert_id: str, new_status: str) -> Alert | None:
         """Update triage status for an alert."""
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         if not alert:
@@ -253,7 +280,9 @@ class AlertService:
         return True
 
     @staticmethod
-    def get_explanation(db: Session, alert_id: str) -> Optional[AlertExplanationResponse]:
+    def get_explanation(
+        db: Session, alert_id: str
+    ) -> AlertExplanationResponse | None:
         """
         Generate analyst-friendly explanation with SHAP waterfall values,
         top contributors, and plain language summary.
@@ -271,12 +300,14 @@ class AlertService:
 
         # Sort positive and negative contributors
         top_pos = [f for f in features if f.shap_value > 0][:3]
-        
+
         # Build plain language narrative
         pos_reasons = []
         for f in top_pos:
             val_str = f" ({f.feature_value:.2f})" if f.feature_value is not None else ""
-            pos_reasons.append(f"{f.feature_name}{val_str} pushed the risk score by +{f.shap_value:.3f}")
+            pos_reasons.append(
+                f"{f.feature_name}{val_str} pushed the risk score by +{f.shap_value:.3f}"
+            )
 
         confidence_pct = int(alert.ml_confidence * 100)
 
@@ -325,18 +356,35 @@ class AlertService:
             "Web Attack": "Inspect URI query parameters and POST body for SQL injection or script tags. Verify WAF rules.",
             "Botnet": "Isolate infected internal host from VLAN. Check DNS queries for DGA or known C2 domains.",
             "Infiltration": "Immediately isolate target host. Collect RAM image and process execution logs for lateral movement analysis.",
-            "Benign": "No immediate containment required. Monitor for unusual threshold spikes."
+            "Benign": "No immediate containment required. Monitor for unusual threshold spikes.",
         }
         rec_action = recommended_actions.get(
             alert.attack_class,
-            "Inspect network flow telemetry, verify asset criticality, and triage according to standard SOC playbook."
+            "Inspect network flow telemetry, verify asset criticality, and triage according to standard SOC playbook.",
+        )
+
+        ds_name = alert.dataset_source or "CIC-IDS2017"
+        dom_name = alert.domain or "network"
+        model_arch_map = {
+            "ciciot2023": "Random Forest (IoT Topology)",
+            "edge_iiotset": "Random Forest (Edge-IIoT)",
+            "nf_ton_iot_v3": "XGBoost (NetFlow v3)",
+            "cic_ids2017": "XGBoost Classifier",
+            "cic-ids2017": "XGBoost Classifier",
+            "iomt_careflow": "LightGBM (Healthcare IoMT)",
+            "iomt-careflow": "LightGBM (Healthcare IoMT)",
+        }
+        model_name = model_arch_map.get(
+            ds_name.lower().replace("-", "_"), "XGBoost Classifier"
         )
 
         plain_lang = PlainLanguageExplanation(
-            summary=summary,
-            primary_contributors=[f"{f.feature_name} (+{f.shap_value:.3f})" for f in top_pos],
+            summary=f"[{ds_name} / {model_name}] {summary}",
+            primary_contributors=[
+                f"{f.feature_name} (+{f.shap_value:.3f})" for f in top_pos
+            ],
             mitre_context=mitre_context,
-            recommended_action=rec_action
+            recommended_action=rec_action,
         )
 
         feat_responses = [AlertShapFeatureResponse.model_validate(f) for f in features]
@@ -347,5 +395,8 @@ class AlertService:
             ml_confidence=alert.ml_confidence,
             base_value=0.10,
             features=feat_responses,
-            plain_language=plain_lang
+            plain_language=plain_lang,
+            dataset_source=ds_name,
+            domain=dom_name,
+            model_name=model_name,
         )

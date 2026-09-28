@@ -9,10 +9,10 @@ Improvements over baseline:
 
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
-import numpy as np
 import joblib
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 
@@ -37,8 +37,8 @@ class TunedRandomForest:
     """
 
     def __init__(self):
-        self.model: Optional[RandomForestClassifier] = None
-        self.best_params: Dict[str, Any] = {}
+        self.model: RandomForestClassifier | None = None
+        self.best_params: dict[str, Any] = {}
         self.name = "tuned_rf"
 
     def train(
@@ -48,7 +48,7 @@ class TunedRandomForest:
         n_iter: int = 20,
         cv: int = 3,
         scoring: str = "f1_macro",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Train with RandomizedSearchCV for hyperparameter optimization.
 
@@ -94,7 +94,7 @@ class TunedRandomForest:
         }
 
     def train_with_params(
-        self, X_train: np.ndarray, y_train: np.ndarray, params: Optional[Dict] = None
+        self, X_train: np.ndarray, y_train: np.ndarray, params: dict | None = None
     ) -> None:
         """Train with specific parameters (skip search)."""
         if params is None:
@@ -107,9 +107,7 @@ class TunedRandomForest:
                 "class_weight": "balanced",
             }
 
-        self.model = RandomForestClassifier(
-            **params, random_state=42, n_jobs=-1
-        )
+        self.model = RandomForestClassifier(**params, random_state=42, n_jobs=-1)
         logger.info(f"Training RF with params: {params}")
         self.model.fit(X_train, y_train)
         self.best_params = params
@@ -138,7 +136,7 @@ class TunedRandomForest:
             for i in indices
         ]
 
-    def save(self, output_dir: Optional[Path] = None) -> Path:
+    def save(self, output_dir: Path | None = None) -> Path:
         """Save trained model and params."""
         if output_dir is None:
             output_dir = MODELS_DIR
@@ -148,7 +146,7 @@ class TunedRandomForest:
         logger.info(f"Model saved to {filepath}")
         return filepath
 
-    def load(self, input_dir: Optional[Path] = None) -> None:
+    def load(self, input_dir: Path | None = None) -> None:
         """Load trained model and params."""
         if input_dir is None:
             input_dir = MODELS_DIR

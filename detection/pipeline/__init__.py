@@ -18,17 +18,17 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from detection.preprocessing.preprocessor import DataPreprocessor
-from detection.explainability import ShapExplainer
-from detection.enrichment.mitre_mapper import MitreMapper
 from detection.enrichment.asset_context import AssetContext
-from detection.enrichment.risk_scorer import RiskScorer
 from detection.enrichment.geo_enricher import GeoEnricher
+from detection.enrichment.mitre_mapper import MitreMapper
+from detection.enrichment.risk_scorer import RiskScorer
 from detection.enrichment.threat_intel import ThreatIntelEnricher
+from detection.explainability import ShapExplainer
+from detection.preprocessing.preprocessor import DataPreprocessor
 
 logger = logging.getLogger(__name__)
 
@@ -106,12 +106,12 @@ class DetectionPipeline:
     def process_flows(
         self,
         X_scaled: np.ndarray,
-        source_ips: Optional[List[str]] = None,
-        dest_ips: Optional[List[str]] = None,
-        dest_ports: Optional[List[int]] = None,
-        protocols: Optional[List[str]] = None,
-        flow_features_raw: Optional[List[Dict]] = None,
-    ) -> List[Dict[str, Any]]:
+        source_ips: list[str] | None = None,
+        dest_ips: list[str] | None = None,
+        dest_ports: list[int] | None = None,
+        protocols: list[str] | None = None,
+        flow_features_raw: list[dict] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Process a batch of network flows through the full pipeline.
 
@@ -166,7 +166,9 @@ class DetectionPipeline:
             asset_criticality = self.asset_context.get_criticality(dest_ip)
 
             # Step 5: Geolocation enrichment
-            source_ip = source_ips[i] if source_ips and i < len(source_ips) else "unknown"
+            source_ip = (
+                source_ips[i] if source_ips and i < len(source_ips) else "unknown"
+            )
             geo_source = None
             geo_dest = None
             if self.geo_enricher:
@@ -178,9 +180,9 @@ class DetectionPipeline:
             threat_intel_score = 0.0
             if self.threat_intel:
                 threat_intel_result = self.threat_intel.check_ip(source_ip)
-                threat_intel_score = threat_intel_result.get(
-                    "abuse_confidence_score", 0
-                ) / 100.0
+                threat_intel_score = (
+                    threat_intel_result.get("abuse_confidence_score", 0) / 100.0
+                )
 
             # Step 7: Composite risk score (now with w4 threat-intel)
             risk_result = self.risk_scorer.compute(
@@ -191,7 +193,9 @@ class DetectionPipeline:
             )
 
             # Check alerting threshold
-            if not self.risk_scorer.should_alert(ml_confidence, risk_result["composite"]):
+            if not self.risk_scorer.should_alert(
+                ml_confidence, risk_result["composite"]
+            ):
                 continue
 
             # Step 8: Build alert JSON
@@ -200,9 +204,13 @@ class DetectionPipeline:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "source_ip": source_ip,
                 "dest_ip": dest_ip,
-                "dest_port": int(dest_ports[i]) if dest_ports and i < len(dest_ports) else None,
+                "dest_port": int(dest_ports[i])
+                if dest_ports and i < len(dest_ports)
+                else None,
                 "protocol": protocols[i] if protocols and i < len(protocols) else "TCP",
-                "flow_features": flow_features_raw[i] if flow_features_raw and i < len(flow_features_raw) else {},
+                "flow_features": flow_features_raw[i]
+                if flow_features_raw and i < len(flow_features_raw)
+                else {},
                 "classification": {
                     "attack_class": attack_class,
                     "confidence": round(ml_confidence, 4),
@@ -223,16 +231,32 @@ class DetectionPipeline:
                 "geo_context": {
                     "source": geo_source,
                     "destination": geo_dest,
-                } if geo_source else None,
+                }
+                if geo_source
+                else None,
                 "threat_intel": {
                     "source_ip": {
-                        "abuse_confidence_score": threat_intel_result.get("abuse_confidence_score", 0) if threat_intel_result else 0,
-                        "total_reports": threat_intel_result.get("total_reports", 0) if threat_intel_result else 0,
-                        "is_known_bad": threat_intel_result.get("is_known_bad", False) if threat_intel_result else False,
-                        "last_reported_at": threat_intel_result.get("last_reported_at") if threat_intel_result else None,
-                        "provider": threat_intel_result.get("provider", "none") if threat_intel_result else "none",
+                        "abuse_confidence_score": threat_intel_result.get(
+                            "abuse_confidence_score", 0
+                        )
+                        if threat_intel_result
+                        else 0,
+                        "total_reports": threat_intel_result.get("total_reports", 0)
+                        if threat_intel_result
+                        else 0,
+                        "is_known_bad": threat_intel_result.get("is_known_bad", False)
+                        if threat_intel_result
+                        else False,
+                        "last_reported_at": threat_intel_result.get("last_reported_at")
+                        if threat_intel_result
+                        else None,
+                        "provider": threat_intel_result.get("provider", "none")
+                        if threat_intel_result
+                        else "none",
                     }
-                } if threat_intel_result else None,
+                }
+                if threat_intel_result
+                else None,
                 "risk_score": risk_result,
             }
 
@@ -241,7 +265,7 @@ class DetectionPipeline:
         elapsed = time.time() - start_time
         logger.info(
             f"Pipeline processed {n_flows} flows → {len(alerts)} alerts "
-            f"in {elapsed:.2f}s ({n_flows/max(elapsed,0.001):.0f} flows/sec)"
+            f"in {elapsed:.2f}s ({n_flows / max(elapsed, 0.001):.0f} flows/sec)"
         )
 
         return alerts

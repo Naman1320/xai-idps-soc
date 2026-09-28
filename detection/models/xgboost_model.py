@@ -6,13 +6,13 @@ Compared against Random Forest to select the best-performing model.
 
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
-import numpy as np
 import joblib
-from xgboost import XGBClassifier
+import numpy as np
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils.class_weight import compute_sample_weight
+from xgboost import XGBClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,8 @@ class XGBoostModel:
     """
 
     def __init__(self):
-        self.model: Optional[XGBClassifier] = None
-        self.best_params: Dict[str, Any] = {}
+        self.model: XGBClassifier | None = None
+        self.best_params: dict[str, Any] = {}
         self.name = "xgboost"
 
     def train(
@@ -47,7 +47,7 @@ class XGBoostModel:
         n_iter: int = 20,
         cv: int = 3,
         scoring: str = "f1_macro",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Train with RandomizedSearchCV.
 
@@ -105,7 +105,7 @@ class XGBoostModel:
         }
 
     def train_with_params(
-        self, X_train: np.ndarray, y_train: np.ndarray, params: Optional[Dict] = None
+        self, X_train: np.ndarray, y_train: np.ndarray, params: dict | None = None
     ) -> None:
         """Train with specific parameters (skip search)."""
         n_classes = len(np.unique(y_train))
@@ -158,7 +158,7 @@ class XGBoostModel:
             for i in indices
         ]
 
-    def save(self, output_dir: Optional[Path] = None) -> Path:
+    def save(self, output_dir: Path | None = None) -> Path:
         if output_dir is None:
             output_dir = MODELS_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -167,7 +167,7 @@ class XGBoostModel:
         logger.info(f"Model saved to {filepath}")
         return filepath
 
-    def load(self, input_dir: Optional[Path] = None) -> None:
+    def load(self, input_dir: Path | None = None) -> None:
         if input_dir is None:
             input_dir = MODELS_DIR
         filepath = input_dir / f"{self.name}.joblib"

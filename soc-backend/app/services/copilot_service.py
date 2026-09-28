@@ -5,15 +5,17 @@ natural language SHAP interpretation, MITRE ATT&CK mitigation playbooks,
 and automated Sigma/Snort rule generation.
 """
 
-from typing import Dict, Any, Optional, List
-from sqlalchemy.orm import Session
+from typing import Any
+
 from app.models.alert import Alert
+from sqlalchemy.orm import Session
 
 
 class CopilotService:
-
     @staticmethod
-    def answer_query(query: str, alert_id: Optional[str] = None, db: Optional[Session] = None) -> Dict[str, Any]:
+    def answer_query(
+        query: str, alert_id: str | None = None, db: Session | None = None
+    ) -> dict[str, Any]:
         """
         Process natural language security queries from the SOC analyst.
         """
@@ -31,11 +33,13 @@ class CopilotService:
                     "dest_port": alert.dest_port,
                     "risk_score": alert.risk_score,
                     "mitre_id": alert.mitre_technique_id,
-                    "mitre_name": alert.mitre_technique_name
+                    "mitre_name": alert.mitre_technique_name,
                 }
 
         # Query matching / heuristic reasoning engine
-        if "ddos" in q or (alert_context and alert_context.get("attack_class") == "DDoS"):
+        if "ddos" in q or (
+            alert_context and alert_context.get("attack_class") == "DDoS"
+        ):
             return {
                 "title": "Copilot Incident Briefing: Volumetric DDoS Attack",
                 "summary": "The detection engine identified an anomalous forward packet volume surge with extremely short inter-arrival durations typical of SYN/UDP volumetric flooding (MITRE T1498).",
@@ -44,13 +48,21 @@ class CopilotService:
                 "remediation_steps": [
                     "Activate perimeter DDoS scrubbing policy at upstream ISP / Cloudflare / AWS Shield.",
                     "Rate limit incoming SYN packets to 50/sec per IP on ingress edge router.",
-                    "Verify target Web DMZ server health (CPU, connection table backlog)."
+                    "Verify target Web DMZ server health (CPU, connection table backlog).",
                 ],
                 "recommended_rule": "sudo iptables -A INPUT -p tcp --dport 80 -m limit --limit 25/minute --limit-burst 100 -j ACCEPT",
-                "sigma_rule": "title: Network Denial of Service Detection\nstatus: production\nlogsource:\n  category: firewall\ndetection:\n  selection:\n    pkt_rate: '>25000'\n  condition: selection"
+                "sigma_rule": "title: Network Denial of Service Detection\nstatus: production\nlogsource:\n  category: firewall\ndetection:\n  selection:\n    pkt_rate: '>25000'\n  condition: selection",
             }
 
-        elif "ssh" in q or "brute" in q or "patator" in q or (alert_context and "patator" in str(alert_context.get("attack_class")).lower()):
+        elif (
+            "ssh" in q
+            or "brute" in q
+            or "patator" in q
+            or (
+                alert_context
+                and "patator" in str(alert_context.get("attack_class")).lower()
+            )
+        ):
             return {
                 "title": "Copilot Incident Briefing: Authentication Brute Force",
                 "summary": "Repeated bidirectional handshakes on port 22/21 with fixed packet lengths indicate automated dictionary attacks (MITRE T1110).",
@@ -59,10 +71,10 @@ class CopilotService:
                 "remediation_steps": [
                     "Deploy instant firewall drop rule on source subnet.",
                     "Enforce Fail2ban with 3 failed attempt lockout.",
-                    "Enforce SSH key-only authentication; disable password authentication in sshd_config."
+                    "Enforce SSH key-only authentication; disable password authentication in sshd_config.",
                 ],
                 "recommended_rule": "sudo iptables -A INPUT -p tcp --dport 22 -s 192.168.10.14 -j DROP",
-                "sigma_rule": "title: SSH Dictionary Brute Force\nstatus: production\nlogsource:\n  service: sshd\ndetection:\n  selection:\n    event_id: 'Failed password'\n  condition: selection | count() > 10 by source_ip"
+                "sigma_rule": "title: SSH Dictionary Brute Force\nstatus: production\nlogsource:\n  service: sshd\ndetection:\n  selection:\n    event_id: 'Failed password'\n  condition: selection | count() > 10 by source_ip",
             }
 
         elif "portscan" in q or "scan" in q or "discovery" in q:
@@ -74,10 +86,10 @@ class CopilotService:
                 "remediation_steps": [
                     "Verify if source IP belongs to authorized Nessus/Qualys scanner allowlist.",
                     "If unauthorized, temporarily blacklist source IP at edge firewall.",
-                    "Inspect whether scanning source attempted subsequent exploitation on open ports."
+                    "Inspect whether scanning source attempted subsequent exploitation on open ports.",
                 ],
                 "recommended_rule": "sudo iptables -A INPUT -s 192.168.10.99 -j DROP",
-                "sigma_rule": "title: TCP SYN Port Scan Sweep\nstatus: production\nlogsource:\n  category: netflow\ndetection:\n  selection:\n    syn_flag: 1\n    bytes: 0\n  condition: selection | count(dest_port) > 50 by source_ip"
+                "sigma_rule": "title: TCP SYN Port Scan Sweep\nstatus: production\nlogsource:\n  category: netflow\ndetection:\n  selection:\n    syn_flag: 1\n    bytes: 0\n  condition: selection | count(dest_port) > 50 by source_ip",
             }
 
         elif "viva" in q or "research gap" in q or "teacher" in q or "professor" in q:
@@ -89,10 +101,10 @@ class CopilotService:
                 "remediation_steps": [
                     "Explain the pipeline contract (Section H of report).",
                     "Demonstrate the interactive SHAP waterfall chart on the dashboard.",
-                    "Show how moving the w1, w2, w3 sliders directly re-calibrates alert risk prioritization."
+                    "Show how moving the w1, w2, w3 sliders directly re-calibrates alert risk prioritization.",
                 ],
                 "recommended_rule": "Macro-F1: 0.946 | FPR: 1.42% | Precision@10: +18.5%",
-                "sigma_rule": "Final-Year B.Tech Capstone Project | All Tests Passing"
+                "sigma_rule": "Final-Year B.Tech Capstone Project | All Tests Passing",
             }
 
         else:
@@ -104,8 +116,8 @@ class CopilotService:
                 "remediation_steps": [
                     "Inspect the Alert Queue sorted by composite risk score.",
                     "Click on any alert to inspect the live SHAP waterfall chart.",
-                    "Use the Case Management tab to group correlated alerts into incidents."
+                    "Use the Case Management tab to group correlated alerts into incidents.",
                 ],
                 "recommended_rule": "w1*ML_Confidence (50%) + w2*Asset_Criticality (30%) + w3*ATT&CK_Severity (20%)",
-                "sigma_rule": "System Status: Online | Continuous Telemetry Ingestion"
+                "sigma_rule": "System Status: Online | Continuous Telemetry Ingestion",
             }

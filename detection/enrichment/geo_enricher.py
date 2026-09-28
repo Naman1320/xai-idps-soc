@@ -18,9 +18,8 @@ Accuracy Caveats (must be documented in any output):
 import ipaddress
 import logging
 import os
-import random
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,7 @@ logger = logging.getLogger(__name__)
 try:
     import geoip2.database
     import geoip2.errors
+
     HAS_GEOIP2 = True
 except ImportError:
     HAS_GEOIP2 = False
@@ -48,51 +48,156 @@ ACCURACY_CAVEAT = (
 # Synthetic geo data for demo/lab environments
 # Maps private IP subnets to plausible-looking geo coordinates
 SYNTHETIC_GEO_POOL = [
-    {"country": "United States", "country_code": "US", "region": "Virginia",
-     "city": "Ashburn", "latitude": 39.0438, "longitude": -77.4874,
-     "asn": 14618, "asn_org": "Amazon.com Inc."},
-    {"country": "United States", "country_code": "US", "region": "Oregon",
-     "city": "Boardman", "latitude": 45.8399, "longitude": -119.7006,
-     "asn": 16509, "asn_org": "Amazon.com Inc."},
-    {"country": "Germany", "country_code": "DE", "region": "Hesse",
-     "city": "Frankfurt", "latitude": 50.1109, "longitude": 8.6821,
-     "asn": 24940, "asn_org": "Hetzner Online GmbH"},
-    {"country": "Russia", "country_code": "RU", "region": "Moscow",
-     "city": "Moscow", "latitude": 55.7558, "longitude": 37.6173,
-     "asn": 49505, "asn_org": "Selectel Ltd."},
-    {"country": "China", "country_code": "CN", "region": "Beijing",
-     "city": "Beijing", "latitude": 39.9042, "longitude": 116.4074,
-     "asn": 4134, "asn_org": "China Telecom"},
-    {"country": "Netherlands", "country_code": "NL", "region": "North Holland",
-     "city": "Amsterdam", "latitude": 52.3676, "longitude": 4.9041,
-     "asn": 60781, "asn_org": "LeaseWeb Netherlands B.V."},
-    {"country": "Brazil", "country_code": "BR", "region": "São Paulo",
-     "city": "São Paulo", "latitude": -23.5505, "longitude": -46.6333,
-     "asn": 28573, "asn_org": "Claro S.A."},
-    {"country": "India", "country_code": "IN", "region": "Maharashtra",
-     "city": "Mumbai", "latitude": 19.0760, "longitude": 72.8777,
-     "asn": 55836, "asn_org": "Reliance Jio Infocomm Limited"},
-    {"country": "United Kingdom", "country_code": "GB", "region": "England",
-     "city": "London", "latitude": 51.5074, "longitude": -0.1278,
-     "asn": 5089, "asn_org": "Virgin Media Limited"},
-    {"country": "Japan", "country_code": "JP", "region": "Tokyo",
-     "city": "Tokyo", "latitude": 35.6762, "longitude": 139.6503,
-     "asn": 2516, "asn_org": "KDDI Corporation"},
-    {"country": "South Korea", "country_code": "KR", "region": "Seoul",
-     "city": "Seoul", "latitude": 37.5665, "longitude": 126.9780,
-     "asn": 4766, "asn_org": "Korea Telecom"},
-    {"country": "Singapore", "country_code": "SG", "region": "Singapore",
-     "city": "Singapore", "latitude": 1.3521, "longitude": 103.8198,
-     "asn": 24482, "asn_org": "SG.GS"},
-    {"country": "Ukraine", "country_code": "UA", "region": "Kyiv",
-     "city": "Kyiv", "latitude": 50.4501, "longitude": 30.5234,
-     "asn": 13188, "asn_org": "Content Delivery Network Ltd"},
-    {"country": "Romania", "country_code": "RO", "region": "Bucharest",
-     "city": "Bucharest", "latitude": 44.4268, "longitude": 26.1025,
-     "asn": 9009, "asn_org": "M247 Europe SRL"},
-    {"country": "Canada", "country_code": "CA", "region": "Ontario",
-     "city": "Toronto", "latitude": 43.6532, "longitude": -79.3832,
-     "asn": 577, "asn_org": "Bell Canada"},
+    {
+        "country": "United States",
+        "country_code": "US",
+        "region": "Virginia",
+        "city": "Ashburn",
+        "latitude": 39.0438,
+        "longitude": -77.4874,
+        "asn": 14618,
+        "asn_org": "Amazon.com Inc.",
+    },
+    {
+        "country": "United States",
+        "country_code": "US",
+        "region": "Oregon",
+        "city": "Boardman",
+        "latitude": 45.8399,
+        "longitude": -119.7006,
+        "asn": 16509,
+        "asn_org": "Amazon.com Inc.",
+    },
+    {
+        "country": "Germany",
+        "country_code": "DE",
+        "region": "Hesse",
+        "city": "Frankfurt",
+        "latitude": 50.1109,
+        "longitude": 8.6821,
+        "asn": 24940,
+        "asn_org": "Hetzner Online GmbH",
+    },
+    {
+        "country": "Russia",
+        "country_code": "RU",
+        "region": "Moscow",
+        "city": "Moscow",
+        "latitude": 55.7558,
+        "longitude": 37.6173,
+        "asn": 49505,
+        "asn_org": "Selectel Ltd.",
+    },
+    {
+        "country": "China",
+        "country_code": "CN",
+        "region": "Beijing",
+        "city": "Beijing",
+        "latitude": 39.9042,
+        "longitude": 116.4074,
+        "asn": 4134,
+        "asn_org": "China Telecom",
+    },
+    {
+        "country": "Netherlands",
+        "country_code": "NL",
+        "region": "North Holland",
+        "city": "Amsterdam",
+        "latitude": 52.3676,
+        "longitude": 4.9041,
+        "asn": 60781,
+        "asn_org": "LeaseWeb Netherlands B.V.",
+    },
+    {
+        "country": "Brazil",
+        "country_code": "BR",
+        "region": "São Paulo",
+        "city": "São Paulo",
+        "latitude": -23.5505,
+        "longitude": -46.6333,
+        "asn": 28573,
+        "asn_org": "Claro S.A.",
+    },
+    {
+        "country": "India",
+        "country_code": "IN",
+        "region": "Maharashtra",
+        "city": "Mumbai",
+        "latitude": 19.0760,
+        "longitude": 72.8777,
+        "asn": 55836,
+        "asn_org": "Reliance Jio Infocomm Limited",
+    },
+    {
+        "country": "United Kingdom",
+        "country_code": "GB",
+        "region": "England",
+        "city": "London",
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "asn": 5089,
+        "asn_org": "Virgin Media Limited",
+    },
+    {
+        "country": "Japan",
+        "country_code": "JP",
+        "region": "Tokyo",
+        "city": "Tokyo",
+        "latitude": 35.6762,
+        "longitude": 139.6503,
+        "asn": 2516,
+        "asn_org": "KDDI Corporation",
+    },
+    {
+        "country": "South Korea",
+        "country_code": "KR",
+        "region": "Seoul",
+        "city": "Seoul",
+        "latitude": 37.5665,
+        "longitude": 126.9780,
+        "asn": 4766,
+        "asn_org": "Korea Telecom",
+    },
+    {
+        "country": "Singapore",
+        "country_code": "SG",
+        "region": "Singapore",
+        "city": "Singapore",
+        "latitude": 1.3521,
+        "longitude": 103.8198,
+        "asn": 24482,
+        "asn_org": "SG.GS",
+    },
+    {
+        "country": "Ukraine",
+        "country_code": "UA",
+        "region": "Kyiv",
+        "city": "Kyiv",
+        "latitude": 50.4501,
+        "longitude": 30.5234,
+        "asn": 13188,
+        "asn_org": "Content Delivery Network Ltd",
+    },
+    {
+        "country": "Romania",
+        "country_code": "RO",
+        "region": "Bucharest",
+        "city": "Bucharest",
+        "latitude": 44.4268,
+        "longitude": 26.1025,
+        "asn": 9009,
+        "asn_org": "M247 Europe SRL",
+    },
+    {
+        "country": "Canada",
+        "country_code": "CA",
+        "region": "Ontario",
+        "city": "Toronto",
+        "latitude": 43.6532,
+        "longitude": -79.3832,
+        "asn": 577,
+        "asn_org": "Bell Canada",
+    },
 ]
 
 
@@ -104,7 +209,7 @@ def _is_private_ip(ip_str: str) -> bool:
         return True  # Treat invalid IPs as private (no geo)
 
 
-def _deterministic_synthetic_geo(ip_str: str) -> Dict[str, Any]:
+def _deterministic_synthetic_geo(ip_str: str) -> dict[str, Any]:
     """
     Return a deterministic synthetic geo entry for a given IP.
     Uses a hash of the IP to pick consistently from the pool,
@@ -138,8 +243,8 @@ class GeoEnricher:
 
     def __init__(
         self,
-        city_db_path: Optional[str] = None,
-        asn_db_path: Optional[str] = None,
+        city_db_path: str | None = None,
+        asn_db_path: str | None = None,
         synthetic_for_private: bool = True,
     ):
         """
@@ -156,13 +261,11 @@ class GeoEnricher:
         # Resolve paths from env or defaults
         if city_db_path is None:
             city_db_path = os.getenv(
-                "GEOLITE2_CITY_DB",
-                str(DATA_DIR / "geolite2" / "GeoLite2-City.mmdb")
+                "GEOLITE2_CITY_DB", str(DATA_DIR / "geolite2" / "GeoLite2-City.mmdb")
             )
         if asn_db_path is None:
             asn_db_path = os.getenv(
-                "GEOLITE2_ASN_DB",
-                str(DATA_DIR / "geolite2" / "GeoLite2-ASN.mmdb")
+                "GEOLITE2_ASN_DB", str(DATA_DIR / "geolite2" / "GeoLite2-ASN.mmdb")
             )
 
         if HAS_GEOIP2:
@@ -197,7 +300,7 @@ class GeoEnricher:
         mode = "live (MaxMind)" if self._available else "synthetic only"
         logger.info(f"GeoEnricher initialized in {mode} mode")
 
-    def enrich(self, ip: str) -> Dict[str, Any]:
+    def enrich(self, ip: str) -> dict[str, Any]:
         """
         Enrich an IP address with geolocation data.
 
@@ -221,7 +324,7 @@ class GeoEnricher:
         # Fallback: synthetic for everything if no DB available
         return _deterministic_synthetic_geo(ip)
 
-    def _real_lookup(self, ip: str) -> Dict[str, Any]:
+    def _real_lookup(self, ip: str) -> dict[str, Any]:
         """Perform actual GeoLite2 database lookup."""
         result = {
             "country": None,
@@ -269,7 +372,7 @@ class GeoEnricher:
 
         return result
 
-    def _empty_result(self, ip: str, is_private: bool = False) -> Dict[str, Any]:
+    def _empty_result(self, ip: str, is_private: bool = False) -> dict[str, Any]:
         """Return empty geo result."""
         return {
             "country": None,

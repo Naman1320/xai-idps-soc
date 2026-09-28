@@ -9,17 +9,14 @@ Authentication & Authorization middleware:
 import hashlib
 import os
 from datetime import datetime, timedelta
-from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
-from sqlalchemy.orm import Session
-
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
-from app.schemas.auth_schema import TokenData
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 # Security schemes
 security = HTTPBearer(auto_error=False)
@@ -45,19 +42,21 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create signed JWT access token."""
     to_encode = data.copy()
     expire = datetime.utcnow() + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
 def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
     """Validate JWT token and return current User."""
@@ -66,14 +65,16 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     # If no token provided in demo mode, allow fallback or require login
     if not credentials:
         raise credentials_exception
 
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -87,14 +88,18 @@ def get_current_user(
 
 
 def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     """Optional user resolution (for public/demo flexibility)."""
     if not credentials:
         return None
     try:
-        payload = jwt.decode(credentials.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
         username: str = payload.get("sub")
         if username:
             return db.query(User).filter(User.username == username).first()
@@ -103,7 +108,7 @@ def get_optional_current_user(
     return None
 
 
-def verify_ingestion_api_key(api_key: Optional[str] = Security(api_key_header)) -> bool:
+def verify_ingestion_api_key(api_key: str | None = Security(api_key_header)) -> bool:
     """
     Validate API key from detection pipeline alert forwarder.
     Also permits valid internal calls or dev fallback.
@@ -113,7 +118,6 @@ def verify_ingestion_api_key(api_key: Optional[str] = Security(api_key_header)) 
         return True
     if api_key != settings.INGESTION_API_KEY:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid Ingestion API Key"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Ingestion API Key"
         )
     return True

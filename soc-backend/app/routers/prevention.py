@@ -2,13 +2,12 @@
 Automated IPS (Intrusion Prevention System) and Firewall Rule Management router.
 """
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.services.prevention_service import PreventionService
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/prevention", tags=["Intrusion Prevention (IPS)"])
 
@@ -16,10 +15,10 @@ router = APIRouter(prefix="/prevention", tags=["Intrusion Prevention (IPS)"])
 class BlockRequest(BaseModel):
     ip: str = Field(..., description="Target IP to block at perimeter firewall")
     reason: str = Field(..., description="Justification or correlated MITRE technique")
-    attack_class: Optional[str] = "Unknown"
-    risk_score: Optional[float] = 0.85
-    duration_minutes: Optional[int] = 60
-    dest_port: Optional[int] = None
+    attack_class: str | None = "Unknown"
+    risk_score: float | None = 0.85
+    duration_minutes: int | None = 60
+    dest_port: int | None = None
 
 
 class UnblockRequest(BaseModel):
@@ -59,15 +58,13 @@ def block_ip(req: BlockRequest, db: Session = Depends(get_db)):
         risk_score=req.risk_score or 0.85,
         duration_minutes=req.duration_minutes or 60,
         triggered_by="analyst",
-        db=db
+        db=db,
     )
     # Generate multi-platform firewall commands
-    rules = PreventionService.generate_firewall_rules(req.ip, req.attack_class or "Threat", req.dest_port)
-    return {
-        "status": "success",
-        "block": res,
-        "syntax_preview": rules
-    }
+    rules = PreventionService.generate_firewall_rules(
+        req.ip, req.attack_class or "Threat", req.dest_port
+    )
+    return {"status": "success", "block": res, "syntax_preview": rules}
 
 
 @router.post("/unblock")

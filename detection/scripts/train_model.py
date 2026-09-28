@@ -18,11 +18,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from detection.preprocessing.preprocessor import DataPreprocessor
 from detection.models.baseline import BaselineModel
+from detection.models.evaluator import ModelEvaluator
 from detection.models.random_forest import TunedRandomForest
 from detection.models.xgboost_model import XGBoostModel
-from detection.models.evaluator import ModelEvaluator
+from detection.preprocessing.preprocessor import DataPreprocessor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 def train_and_evaluate(model_class, model_name, splits, class_names, quick=False):
     """Train a model and evaluate on validation set."""
-    logger.info(f"\n{'='*60}")
+    logger.info(f"\n{'=' * 60}")
     logger.info(f"TRAINING: {model_name}")
-    logger.info(f"{'='*60}")
+    logger.info(f"{'=' * 60}")
 
     X_train = splits["X_train"]
     y_train = splits["y_train"]
@@ -67,7 +67,9 @@ def train_and_evaluate(model_class, model_name, splits, class_names, quick=False
 
     # Print per-class metrics
     report_df = evaluator.get_report_dataframe(model_name)
-    logger.info(f"\nPer-class metrics (validation set):\n{report_df.to_string(index=False)}")
+    logger.info(
+        f"\nPer-class metrics (validation set):\n{report_df.to_string(index=False)}"
+    )
 
     # Save model
     model_instance.save()
@@ -128,9 +130,9 @@ def main():
         evaluator = ModelEvaluator(class_names=class_names)
         evaluator.results = all_results
         comparison = evaluator.compare_models()
-        logger.info(f"\n{'='*60}")
+        logger.info(f"\n{'=' * 60}")
         logger.info("MODEL COMPARISON (Validation Set)")
-        logger.info(f"{'='*60}")
+        logger.info(f"{'=' * 60}")
         logger.info(f"\n{comparison.to_string(index=False)}")
 
 

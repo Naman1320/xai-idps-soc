@@ -6,7 +6,6 @@ Loads asset inventory from detection/config/asset_inventory.yaml.
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -23,7 +22,7 @@ class AssetContext:
     For this project, it reads from a simple YAML inventory file.
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         if config_path is None:
             config_path = CONFIG_DIR / "asset_inventory.yaml"
 

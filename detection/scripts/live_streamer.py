@@ -5,20 +5,28 @@ Continuously generates and streams realistic network flow telemetry
 and periodic attack waves into the XAI-IDPS-SOC platform.
 """
 
-import time
-import random
-import sys
 import os
+import random
+import time
+
 import requests
 
 API_URL = os.getenv("API_URL", "http://localhost:8000/api/v1")
 STREAM_INTERVAL = int(os.getenv("STREAM_INTERVAL", "12"))  # seconds
 
-ATTACK_TYPES = ["DDoS", "DoS Hulk", "PortScan", "SSH-Patator", "Web Attack", "Botnet", "Benign"]
+ATTACK_TYPES = [
+    "DDoS",
+    "DoS Hulk",
+    "PortScan",
+    "SSH-Patator",
+    "Web Attack",
+    "Botnet",
+    "Benign",
+]
 
 
 def run_streamer():
-    print(f"🚀 XAI-IDPS-SOC Live Telemetry Daemon Started")
+    print("🚀 XAI-IDPS-SOC Live Telemetry Daemon Started")
     print(f"📡 Target Endpoint: {API_URL}/simulator/attack")
     print(f"⏱️  Stream Interval: {STREAM_INTERVAL}s")
 
@@ -32,11 +40,13 @@ def run_streamer():
             res = requests.post(
                 f"{API_URL}/simulator/attack",
                 json={"attack_type": chosen_type, "intensity": intensity},
-                timeout=5
+                timeout=5,
             )
             if res.status_code == 201:
                 data = res.json()
-                print(f"[{time.strftime('%H:%M:%S')}] ✓ Streamed {data['attack_class']} flow | Src: {data['source_ip']} -> Dst: {data['dest_ip']} | Risk: {int(data['risk_score']*100)}%")
+                print(
+                    f"[{time.strftime('%H:%M:%S')}] ✓ Streamed {data['attack_class']} flow | Src: {data['source_ip']} -> Dst: {data['dest_ip']} | Risk: {int(data['risk_score'] * 100)}%"
+                )
             else:
                 print(f"[{time.strftime('%H:%M:%S')}] Ingest HTTP {res.status_code}")
         except Exception as e:

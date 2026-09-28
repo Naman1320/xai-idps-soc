@@ -4,64 +4,67 @@ geolocation context, and threat intelligence data.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class ShapFeatureContribution(BaseModel):
     feature: str
     shap_value: float
-    feature_value: Optional[float] = None
-    rank: Optional[int] = None
+    feature_value: float | None = None
+    rank: int | None = None
 
 
 class ShapExplanationSchema(BaseModel):
-    base_value: Optional[float] = 0.0
-    feature_contributions: List[ShapFeatureContribution] = []
+    base_value: float | None = 0.0
+    feature_contributions: list[ShapFeatureContribution] = []
 
 
 class MitreMappingSchema(BaseModel):
-    technique_id: Optional[str] = None
-    technique_name: Optional[str] = None
-    tactic: Optional[str] = None
-    severity: Optional[str] = None
-    description: Optional[str] = None
+    technique_id: str | None = None
+    technique_name: str | None = None
+    tactic: str | None = None
+    severity: str | None = None
+    description: str | None = None
 
 
 class RiskScoreComponentsSchema(BaseModel):
     ml_confidence: float
     asset_criticality: float
     attack_severity: float
-    threat_intel: Optional[float] = 0.0
+    threat_intel: float | None = 0.0
 
 
 class RiskScoreSchema(BaseModel):
     composite: float
-    components: Optional[RiskScoreComponentsSchema] = None
-    weights: Optional[Dict[str, float]] = None
+    components: RiskScoreComponentsSchema | None = None
+    weights: dict[str, float] | None = None
 
 
 class ClassificationSchema(BaseModel):
     attack_class: str
     confidence: float
-    probabilities: Optional[Dict[str, float]] = None
+    probabilities: dict[str, float] | None = None
 
 
 # --- Geolocation & Threat Intel Schemas ---
+
 
 class GeoContextEntrySchema(BaseModel):
     """
     Geolocation data for a single IP.
     Caveat: City/region-level accuracy only; unreliable for VPN/proxy/CGNAT.
     """
-    country: Optional[str] = None
-    country_code: Optional[str] = None
-    region: Optional[str] = None
-    city: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    asn: Optional[int] = None
-    asn_org: Optional[str] = None
+
+    country: str | None = None
+    country_code: str | None = None
+    region: str | None = None
+    city: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    asn: int | None = None
+    asn_org: str | None = None
     is_private: bool = False
     is_synthetic: bool = False
     accuracy_caveat: str = "City-level accuracy; unreliable for VPN/proxy/CGNAT"
@@ -69,8 +72,9 @@ class GeoContextEntrySchema(BaseModel):
 
 class GeoContextSchema(BaseModel):
     """Source and destination geolocation context."""
-    source: Optional[GeoContextEntrySchema] = None
-    destination: Optional[GeoContextEntrySchema] = None
+
+    source: GeoContextEntrySchema | None = None
+    destination: GeoContextEntrySchema | None = None
 
 
 class ThreatIntelEntrySchema(BaseModel):
@@ -78,45 +82,52 @@ class ThreatIntelEntrySchema(BaseModel):
     Threat intelligence data for a source IP.
     Data source: AbuseIPDB free tier (1,000 checks/day).
     """
-    abuse_confidence_score: Optional[int] = 0
-    total_reports: Optional[int] = 0
+
+    abuse_confidence_score: int | None = 0
+    total_reports: int | None = 0
     is_known_bad: bool = False
-    last_reported_at: Optional[str] = None
-    provider: Optional[str] = "none"
+    last_reported_at: str | None = None
+    provider: str | None = "none"
 
 
 class ThreatIntelSchema(BaseModel):
     """Threat intel wrapper for source IP."""
-    source_ip: Optional[ThreatIntelEntrySchema] = None
+
+    source_ip: ThreatIntelEntrySchema | None = None
 
 
 # --- Alert Ingestion (from Detection Pipeline) ---
 
+
 class AlertIngestSchema(BaseModel):
-    alert_id: Optional[str] = None
-    timestamp: Optional[Union[datetime, str]] = None
+    alert_id: str | None = None
+    timestamp: datetime | str | None = None
     source_ip: str
     dest_ip: str
-    dest_port: Optional[int] = None
-    protocol: Optional[str] = "TCP"
-    flow_features: Optional[Dict[str, Any]] = None
+    dest_port: int | None = None
+    protocol: str | None = "TCP"
+    flow_features: dict[str, Any] | None = None
     classification: ClassificationSchema
-    shap_explanation: Optional[ShapExplanationSchema] = None
-    mitre_mapping: Optional[MitreMappingSchema] = None
-    risk_score: Union[RiskScoreSchema, float]
-    geo_context: Optional[GeoContextSchema] = None
-    threat_intel: Optional[ThreatIntelSchema] = None
+    shap_explanation: ShapExplanationSchema | None = None
+    mitre_mapping: MitreMappingSchema | None = None
+    risk_score: RiskScoreSchema | float
+    geo_context: GeoContextSchema | None = None
+    threat_intel: ThreatIntelSchema | None = None
+    dataset_source: str | None = "CIC-IDS2017"
+    domain: str | None = "network"
 
 
 class AlertStatusUpdate(BaseModel):
-    status: str = Field(..., description="Status: new, investigating, resolved, dismissed, closed")
+    status: str = Field(
+        ..., description="Status: new, investigating, resolved, dismissed, closed"
+    )
 
 
 class AlertShapFeatureResponse(BaseModel):
     id: str
     feature_name: str
     shap_value: float
-    feature_value: Optional[float] = None
+    feature_value: float | None = None
     rank: int
 
     class Config:
@@ -128,46 +139,49 @@ class AlertResponse(BaseModel):
     detected_at: datetime
     source_ip: str
     dest_ip: str
-    dest_port: Optional[int] = None
-    protocol: Optional[str] = "TCP"
-    flow_features: Optional[Dict[str, Any]] = None
+    dest_port: int | None = None
+    protocol: str | None = "TCP"
+    flow_features: dict[str, Any] | None = None
     attack_class: str
     ml_confidence: float
-    class_probabilities: Optional[Dict[str, float]] = None
-    mitre_technique_id: Optional[str] = None
-    mitre_technique_name: Optional[str] = None
-    mitre_tactic: Optional[str] = None
-    mitre_severity: Optional[str] = None
-    mitre_description: Optional[str] = None
+    class_probabilities: dict[str, float] | None = None
+    mitre_technique_id: str | None = None
+    mitre_technique_name: str | None = None
+    mitre_tactic: str | None = None
+    mitre_severity: str | None = None
+    mitre_description: str | None = None
     asset_criticality: float
     risk_score: float
-    risk_score_components: Optional[Dict[str, Any]] = None
+    risk_score_components: dict[str, Any] | None = None
     # Geolocation fields
-    geo_source_country: Optional[str] = None
-    geo_source_country_code: Optional[str] = None
-    geo_source_region: Optional[str] = None
-    geo_source_city: Optional[str] = None
-    geo_source_lat: Optional[float] = None
-    geo_source_lon: Optional[float] = None
-    geo_source_asn: Optional[int] = None
-    geo_source_asn_org: Optional[str] = None
-    geo_is_synthetic: bool = False
+    geo_source_country: str | None = None
+    geo_source_country_code: str | None = None
+    geo_source_region: str | None = None
+    geo_source_city: str | None = None
+    geo_source_lat: float | None = None
+    geo_source_lon: float | None = None
+    geo_source_asn: int | None = None
+    geo_source_asn_org: str | None = None
+    geo_is_synthetic: bool | None = False
     # Threat intel fields
-    threat_intel_score: Optional[float] = None
-    threat_intel_reports: Optional[int] = None
-    threat_intel_is_known_bad: bool = False
-    threat_intel_provider: Optional[str] = None
+    threat_intel_score: float | None = None
+    threat_intel_reports: int | None = None
+    threat_intel_is_known_bad: bool | None = False
+    threat_intel_provider: str | None = None
     # Status
     status: str
     ingested_at: datetime
-    shap_features: Optional[List[AlertShapFeatureResponse]] = []
+    shap_features: list[AlertShapFeatureResponse] | None = []
+    # Dataset & Domain
+    dataset_source: str | None = "CIC-IDS2017"
+    domain: str | None = "network"
 
     class Config:
         from_attributes = True
 
 
 class AlertListResponse(BaseModel):
-    alerts: List[AlertResponse]
+    alerts: list[AlertResponse]
     total: int
     page: int
     pages: int
@@ -176,36 +190,42 @@ class AlertListResponse(BaseModel):
 
 class PlainLanguageExplanation(BaseModel):
     summary: str
-    primary_contributors: List[str]
+    primary_contributors: list[str]
     mitre_context: str
     recommended_action: str
 
 
 class AlertExplanationResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     alert_id: str
     attack_class: str
     ml_confidence: float
     base_value: float
-    features: List[AlertShapFeatureResponse]
+    features: list[AlertShapFeatureResponse]
     plain_language: PlainLanguageExplanation
+    dataset_source: str | None = "CIC-IDS2017"
+    domain: str | None = "network"
+    model_name: str | None = "XGBoost Classifier"
 
 
 # --- Geolocation API Schemas ---
 
+
 class GeoAlertMapEntry(BaseModel):
     """Single alert entry for the geo map visualization."""
+
     alert_id: str
     source_ip: str
     attack_class: str
     risk_score: float
-    mitre_severity: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    country: Optional[str] = None
-    country_code: Optional[str] = None
-    city: Optional[str] = None
-    asn_org: Optional[str] = None
-    threat_intel_score: Optional[float] = None
+    mitre_severity: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    country: str | None = None
+    country_code: str | None = None
+    city: str | None = None
+    asn_org: str | None = None
+    threat_intel_score: float | None = None
     is_known_bad: bool = False
     is_synthetic: bool = False
     detected_at: datetime
@@ -213,7 +233,8 @@ class GeoAlertMapEntry(BaseModel):
 
 class GeoAlertsMapResponse(BaseModel):
     """Response for the geo map alerts endpoint."""
-    alerts: List[GeoAlertMapEntry]
+
+    alerts: list[GeoAlertMapEntry]
     total: int
     caveat: str = (
         "IP geolocation is approximate (city/region-level). "
@@ -224,14 +245,14 @@ class GeoAlertsMapResponse(BaseModel):
 
 class CountrySummaryEntry(BaseModel):
     country: str
-    country_code: Optional[str] = None
+    country_code: str | None = None
     alert_count: int
     avg_risk_score: float
     known_bad_count: int
 
 
 class CountrySummaryResponse(BaseModel):
-    countries: List[CountrySummaryEntry]
+    countries: list[CountrySummaryEntry]
     total_countries: int
 
 
@@ -240,11 +261,11 @@ class ThreatIntelSummaryEntry(BaseModel):
     abuse_confidence_score: float
     total_reports: int
     alert_count: int
-    attack_classes: List[str]
-    country: Optional[str] = None
+    attack_classes: list[str]
+    country: str | None = None
 
 
 class ThreatIntelSummaryResponse(BaseModel):
-    known_bad_ips: List[ThreatIntelSummaryEntry]
+    known_bad_ips: list[ThreatIntelSummaryEntry]
     total_known_bad: int
     total_alerts_from_known_bad: int

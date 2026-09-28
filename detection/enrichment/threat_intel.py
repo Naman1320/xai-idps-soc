@@ -25,9 +25,8 @@ import ipaddress
 import logging
 import os
 import time
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 import httpx
 
@@ -54,12 +53,12 @@ class ThreatIntelCache:
     """
 
     def __init__(self, ttl_hours: int = 24):
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
         self._ttl_seconds = ttl_hours * 3600
         self._hits = 0
         self._misses = 0
 
-    def get(self, ip: str) -> Optional[Dict[str, Any]]:
+    def get(self, ip: str) -> dict[str, Any] | None:
         """Get cached result for an IP, or None if expired/missing."""
         entry = self._cache.get(ip)
         if entry is None:
@@ -74,13 +73,13 @@ class ThreatIntelCache:
         self._hits += 1
         return entry
 
-    def put(self, ip: str, data: Dict[str, Any]) -> None:
+    def put(self, ip: str, data: dict[str, Any]) -> None:
         """Cache a result for an IP."""
         data["_cached_at"] = time.time()
         self._cache[ip] = data
 
     @property
-    def stats(self) -> Dict[str, int]:
+    def stats(self) -> dict[str, int]:
         return {
             "cached_ips": len(self._cache),
             "hits": self._hits,
@@ -107,7 +106,7 @@ class ThreatIntelEnricher:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         cache_ttl_hours: int = 24,
         known_bad_threshold: int = 50,
         timeout: float = 5.0,
@@ -139,7 +138,7 @@ class ThreatIntelEnricher:
                 "return default scores. Set ABUSEIPDB_API_KEY env var or pass api_key."
             )
 
-    def check_ip(self, ip: str) -> Dict[str, Any]:
+    def check_ip(self, ip: str) -> dict[str, Any]:
         """
         Check an IP's threat reputation.
 
@@ -183,7 +182,7 @@ class ThreatIntelEnricher:
         # Perform API lookup
         return self._api_lookup(ip)
 
-    def _api_lookup(self, ip: str) -> Dict[str, Any]:
+    def _api_lookup(self, ip: str) -> dict[str, Any]:
         """Perform actual AbuseIPDB API lookup."""
         try:
             headers = {
@@ -210,7 +209,8 @@ class ThreatIntelEnricher:
                 result = {
                     "abuse_confidence_score": data.get("abuseConfidenceScore", 0),
                     "total_reports": data.get("totalReports", 0),
-                    "is_known_bad": data.get("abuseConfidenceScore", 0) >= self.known_bad_threshold,
+                    "is_known_bad": data.get("abuseConfidenceScore", 0)
+                    >= self.known_bad_threshold,
                     "last_reported_at": data.get("lastReportedAt"),
                     "usage_type": data.get("usageType"),
                     "isp": data.get("isp"),
@@ -241,7 +241,7 @@ class ThreatIntelEnricher:
             logger.error(f"AbuseIPDB lookup error for {ip}: {e}")
             return self._default_result(ip, reason="error")
 
-    def _default_result(self, ip: str, reason: str = "unknown") -> Dict[str, Any]:
+    def _default_result(self, ip: str, reason: str = "unknown") -> dict[str, Any]:
         """Return default threat-intel result when data is unavailable."""
         return {
             "abuse_confidence_score": 0,
@@ -272,12 +272,12 @@ class ThreatIntelEnricher:
             return 0.0
         return result.get("abuse_confidence_score", 0) / 100.0
 
-    def lookup(self, ip: str) -> Dict[str, Any]:
+    def lookup(self, ip: str) -> dict[str, Any]:
         """Convenience alias for check_ip."""
         return self.check_ip(ip)
 
     @property
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return usage statistics."""
         return {
             "api_available": self._available,

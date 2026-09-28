@@ -17,11 +17,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from detection.preprocessing import (
-    load_cicids2017,
-    load_cic_ids2018,
-    load_unsw_nb15,
     clean_dataframe,
     get_class_distribution,
+    load_cic_ids2018,
+    load_cicids2017,
+    load_unsw_nb15,
 )
 from detection.preprocessing.preprocessor import DataPreprocessor
 
@@ -50,7 +50,9 @@ def preprocess_cicids2017(sample_frac=None):
 
     # Prepare features
     preprocessor = DataPreprocessor(dataset_name="cicids2017")
-    X, y = preprocessor.prepare_features(df, remove_constant=True, remove_high_corr=False)
+    X, y = preprocessor.prepare_features(
+        df, remove_constant=True, remove_high_corr=False
+    )
 
     # Fit and transform
     X_scaled, y_encoded = preprocessor.fit_transform(X, y)
@@ -91,9 +93,18 @@ def preprocess_unsw_nb15():
     X_train_scaled, y_train_encoded = preprocessor.fit_transform(X_train, y_train)
 
     # Transform test with same preprocessor
-    X_test_raw, y_test = preprocessor.prepare_features.__wrapped__(preprocessor, test_df) if hasattr(preprocessor.prepare_features, '__wrapped__') else (
-        test_df.drop(columns=[c for c in preprocessor.columns_to_drop if c in test_df.columns], errors="ignore").select_dtypes(include=["number"]),
-        test_df[preprocessor.label_col]
+    X_test_raw, y_test = (
+        preprocessor.prepare_features.__wrapped__(preprocessor, test_df)
+        if hasattr(preprocessor.prepare_features, "__wrapped__")
+        else (
+            test_df.drop(
+                columns=[
+                    c for c in preprocessor.columns_to_drop if c in test_df.columns
+                ],
+                errors="ignore",
+            ).select_dtypes(include=["number"]),
+            test_df[preprocessor.label_col],
+        )
     )
     # Ensure same feature columns
     for col in preprocessor.feature_names:
@@ -105,8 +116,10 @@ def preprocess_unsw_nb15():
 
     # Create validation split from training data
     from sklearn.model_selection import train_test_split
+
     X_train_final, X_val, y_train_final, y_val = train_test_split(
-        X_train_scaled, y_train_encoded,
+        X_train_scaled,
+        y_train_encoded,
         test_size=0.176,  # ~15% of total (15/85 ≈ 0.176)
         random_state=42,
         stratify=y_train_encoded,
@@ -147,7 +160,9 @@ def preprocess_cic_ids2018(sample_frac=None):
 
     # Prepare features
     preprocessor = DataPreprocessor(dataset_name="cic_ids2018")
-    X, y = preprocessor.prepare_features(df, remove_constant=True, remove_high_corr=False)
+    X, y = preprocessor.prepare_features(
+        df, remove_constant=True, remove_high_corr=False
+    )
 
     # Fit and transform
     X_scaled, y_encoded = preprocessor.fit_transform(X, y)

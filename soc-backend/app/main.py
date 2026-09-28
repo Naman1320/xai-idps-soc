@@ -7,31 +7,29 @@ digital twin topology, and SOC analytics.
 
 import logging
 from contextlib import asynccontextmanager
+
+from app.config import settings
+from app.database import Base, SessionLocal, engine
+from app.routers import (
+    alerts_router,
+    analytics_router,
+    auth_router,
+    cases_router,
+    copilot_router,
+    feedback_router,
+    geolocation_router,
+    prevention_router,
+    reports_router,
+    settings_router,
+    simulator_router,
+    topology_router,
+)
+from app.services.seed_service import seed_database
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.database import engine, Base, SessionLocal
-from app.models import User, Alert, AlertShapFeature, Case, Feedback, ResponseLog
-from app.services.seed_service import seed_database
-from app.routers import (
-    auth_router,
-    alerts_router,
-    cases_router,
-    feedback_router,
-    analytics_router,
-    settings_router,
-    prevention_router,
-    copilot_router,
-    simulator_router,
-    topology_router,
-    reports_router,
-    geolocation_router,
-)
-
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("soc-backend")
 
@@ -41,7 +39,7 @@ async def lifespan(app: FastAPI):
     """Startup & shutdown lifecycle handler."""
     logger.info("Initializing database tables...")
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     try:
         seed_database(db)
@@ -60,7 +58,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Full Cloud SOC Ingestion, Triage, Explainability, IPS Prevention & AI Copilot Platform",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -90,11 +88,7 @@ app.include_router(geolocation_router, prefix=api_v1_prefix)
 @app.get("/health", tags=["System"])
 def health_check():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": settings.PROJECT_NAME,
-        "version": "2.0.0"
-    }
+    return {"status": "healthy", "service": settings.PROJECT_NAME, "version": "2.0.0"}
 
 
 @app.get("/", tags=["System"])
@@ -103,5 +97,5 @@ def root():
     return {
         "message": "XAI-IDPS-SOC Full Cloud Platform API",
         "docs": "/docs",
-        "api_v1": settings.API_V1_STR
+        "api_v1": settings.API_V1_STR,
     }

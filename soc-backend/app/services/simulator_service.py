@@ -6,22 +6,22 @@ generating real-time flow vectors, computing SHAP local feature attributions,
 and ingesting them straight into the cloud SOC.
 """
 
-import uuid
 import random
+import uuid
 from datetime import datetime
-from typing import Dict, Any, List
-from sqlalchemy.orm import Session
+from typing import Any
 
 from app.schemas.alert_schema import (
     AlertIngestSchema,
     ClassificationSchema,
+    MitreMappingSchema,
+    RiskScoreComponentsSchema,
+    RiskScoreSchema,
     ShapExplanationSchema,
     ShapFeatureContribution,
-    MitreMappingSchema,
-    RiskScoreSchema,
-    RiskScoreComponentsSchema,
 )
 from app.services.alert_service import AlertService
+from sqlalchemy.orm import Session
 
 
 class SimulatorService:
@@ -40,12 +40,28 @@ class SimulatorService:
             "severity": "High",
             "desc": "Adversaries perform volumetric DoS to disrupt service availability.",
             "shap_template": [
-                {"feature": "Flow Packets/s", "base_shap": 0.38, "val_range": (25000, 45000)},
-                {"feature": "Fwd Packet Length Mean", "base_shap": 0.28, "val_range": (1200, 1460)},
-                {"feature": "Flow Duration", "base_shap": 0.16, "val_range": (0.001, 0.005)},
+                {
+                    "feature": "Flow Packets/s",
+                    "base_shap": 0.38,
+                    "val_range": (25000, 45000),
+                },
+                {
+                    "feature": "Fwd Packet Length Mean",
+                    "base_shap": 0.28,
+                    "val_range": (1200, 1460),
+                },
+                {
+                    "feature": "Flow Duration",
+                    "base_shap": 0.16,
+                    "val_range": (0.001, 0.005),
+                },
                 {"feature": "SYN Flag Count", "base_shap": 0.09, "val_range": (1, 1)},
-                {"feature": "Bwd Packet Length Mean", "base_shap": -0.03, "val_range": (30, 60)}
-            ]
+                {
+                    "feature": "Bwd Packet Length Mean",
+                    "base_shap": -0.03,
+                    "val_range": (30, 60),
+                },
+            ],
         },
         "PortScan": {
             "attack_class": "PortScan",
@@ -60,10 +76,22 @@ class SimulatorService:
             "desc": "Adversaries attempt to scan host ports to identify running services.",
             "shap_template": [
                 {"feature": "SYN Flag Count", "base_shap": 0.36, "val_range": (1, 1)},
-                {"feature": "Flow Duration", "base_shap": 0.26, "val_range": (0.0001, 0.0005)},
-                {"feature": "Fwd Packet Length Mean", "base_shap": -0.22, "val_range": (0, 0)},
-                {"feature": "Total Fwd Packets", "base_shap": 0.14, "val_range": (1, 2)}
-            ]
+                {
+                    "feature": "Flow Duration",
+                    "base_shap": 0.26,
+                    "val_range": (0.0001, 0.0005),
+                },
+                {
+                    "feature": "Fwd Packet Length Mean",
+                    "base_shap": -0.22,
+                    "val_range": (0, 0),
+                },
+                {
+                    "feature": "Total Fwd Packets",
+                    "base_shap": 0.14,
+                    "val_range": (1, 2),
+                },
+            ],
         },
         "SSH-Patator": {
             "attack_class": "SSH-Patator",
@@ -77,11 +105,27 @@ class SimulatorService:
             "severity": "High",
             "desc": "Adversaries perform dictionary credential guessing against SSH.",
             "shap_template": [
-                {"feature": "Dst Port (22/SSH)", "base_shap": 0.42, "val_range": (22, 22)},
-                {"feature": "Flow Duration", "base_shap": 0.24, "val_range": (3.5, 6.0)},
-                {"feature": "Fwd Packet Length Mean", "base_shap": 0.18, "val_range": (80, 110)},
-                {"feature": "Flow Packets/s", "base_shap": -0.05, "val_range": (10, 18)}
-            ]
+                {
+                    "feature": "Dst Port (22/SSH)",
+                    "base_shap": 0.42,
+                    "val_range": (22, 22),
+                },
+                {
+                    "feature": "Flow Duration",
+                    "base_shap": 0.24,
+                    "val_range": (3.5, 6.0),
+                },
+                {
+                    "feature": "Fwd Packet Length Mean",
+                    "base_shap": 0.18,
+                    "val_range": (80, 110),
+                },
+                {
+                    "feature": "Flow Packets/s",
+                    "base_shap": -0.05,
+                    "val_range": (10, 18),
+                },
+            ],
         },
         "Web Attack": {
             "attack_class": "Web Attack",
@@ -95,10 +139,22 @@ class SimulatorService:
             "severity": "High",
             "desc": "Adversaries attempt SQL injection, XSS, or RCE against web servers.",
             "shap_template": [
-                {"feature": "Fwd Packet Length Mean", "base_shap": 0.34, "val_range": (420, 680)},
-                {"feature": "Bwd Packet Length Mean", "base_shap": 0.26, "val_range": (1100, 1500)},
-                {"feature": "Flow Bytes/s", "base_shap": 0.18, "val_range": (60000, 95000)}
-            ]
+                {
+                    "feature": "Fwd Packet Length Mean",
+                    "base_shap": 0.34,
+                    "val_range": (420, 680),
+                },
+                {
+                    "feature": "Bwd Packet Length Mean",
+                    "base_shap": 0.26,
+                    "val_range": (1100, 1500),
+                },
+                {
+                    "feature": "Flow Bytes/s",
+                    "base_shap": 0.18,
+                    "val_range": (60000, 95000),
+                },
+            ],
         },
         "Botnet": {
             "attack_class": "Botnet",
@@ -112,15 +168,25 @@ class SimulatorService:
             "severity": "High",
             "desc": "Internal infected hosts communicating with external C2 servers.",
             "shap_template": [
-                {"feature": "Flow Duration", "base_shap": 0.38, "val_range": (45.0, 90.0)},
+                {
+                    "feature": "Flow Duration",
+                    "base_shap": 0.38,
+                    "val_range": (45.0, 90.0),
+                },
                 {"feature": "Dst Port", "base_shap": 0.22, "val_range": (8080, 8080)},
-                {"feature": "Flow Packets/s", "base_shap": -0.14, "val_range": (0.3, 0.8)}
-            ]
-        }
+                {
+                    "feature": "Flow Packets/s",
+                    "base_shap": -0.14,
+                    "val_range": (0.3, 0.8),
+                },
+            ],
+        },
     }
 
     @classmethod
-    def trigger_attack(cls, db: Session, attack_type: str = "DDoS", intensity: float = 1.0) -> Dict[str, Any]:
+    def trigger_attack(
+        cls, db: Session, attack_type: str = "DDoS", intensity: float = 1.0
+    ) -> dict[str, Any]:
         """
         Generate and ingest an on-demand simulated cyber attack flow.
         """
@@ -137,20 +203,24 @@ class SimulatorService:
         flow_features = {}
         for idx, item in enumerate(preset["shap_template"]):
             val = round(random.uniform(*item["val_range"]), 2)
-            shap_val = round(item["base_shap"] * intensity + random.uniform(-0.02, 0.02), 3)
+            shap_val = round(
+                item["base_shap"] * intensity + random.uniform(-0.02, 0.02), 3
+            )
             flow_features[item["feature"].lower().replace(" ", "_")] = val
             shap_contribs.append(
                 ShapFeatureContribution(
                     feature=item["feature"],
                     shap_value=shap_val,
                     feature_value=val,
-                    rank=idx + 1
+                    rank=idx + 1,
                 )
             )
 
         # Composite risk calculation
         sev_score = 0.9 if preset["severity"] == "High" else 0.6
-        composite_risk = round(0.5 * confidence + 0.3 * preset["asset_crit"] + 0.2 * sev_score, 3)
+        composite_risk = round(
+            0.5 * confidence + 0.3 * preset["asset_crit"] + 0.2 * sev_score, 3
+        )
 
         payload = AlertIngestSchema(
             alert_id=str(uuid.uuid4()),
@@ -163,28 +233,30 @@ class SimulatorService:
             classification=ClassificationSchema(
                 attack_class=preset["attack_class"],
                 confidence=confidence,
-                probabilities={"Benign": round(1 - confidence, 3), preset["attack_class"]: confidence}
+                probabilities={
+                    "Benign": round(1 - confidence, 3),
+                    preset["attack_class"]: confidence,
+                },
             ),
             shap_explanation=ShapExplanationSchema(
-                base_value=0.10,
-                feature_contributions=shap_contribs
+                base_value=0.10, feature_contributions=shap_contribs
             ),
             mitre_mapping=MitreMappingSchema(
                 technique_id=preset["mitre_id"],
                 technique_name=preset["mitre_name"],
                 tactic=preset["tactic"],
                 severity=preset["severity"],
-                description=preset["desc"]
+                description=preset["desc"],
             ),
             risk_score=RiskScoreSchema(
                 composite=composite_risk,
                 components=RiskScoreComponentsSchema(
                     ml_confidence=confidence,
                     asset_criticality=preset["asset_crit"],
-                    attack_severity=sev_score
+                    attack_severity=sev_score,
                 ),
-                weights={"w1": 0.5, "w2": 0.3, "w3": 0.2}
-            )
+                weights={"w1": 0.5, "w2": 0.3, "w3": 0.2},
+            ),
         )
 
         alert = AlertService.ingest_alert(db, payload)
@@ -197,5 +269,5 @@ class SimulatorService:
             "risk_score": alert.risk_score,
             "source_ip": alert.source_ip,
             "dest_ip": alert.dest_ip,
-            "shap_features_count": len(shap_contribs)
+            "shap_features_count": len(shap_contribs),
         }

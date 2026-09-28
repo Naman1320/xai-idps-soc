@@ -6,10 +6,11 @@ Guarantees $0.00 cloud cost with zero real-cloud billing exposure.
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, Request, Response, status, Header
-from fastapi.responses import JSONResponse, PlainTextResponse
+from typing import Any, Dict, List, Optional  # noqa: UP035
+
+from fastapi import FastAPI, Header, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 app = FastAPI(
     title="LocalStack $0-Cost Cloud Emulator",

@@ -22,7 +22,8 @@ Multi-Modal Architecture Connection (Section H):
 
 import logging
 from pathlib import Path
-from typing import Tuple, Dict, Any, Optional, List
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -37,37 +38,69 @@ def generate_synthetic_beth_sample(n_records: int = 500) -> pd.DataFrame:
     when raw Kaggle CSVs are not locally present.
     """
     np.random.seed(42)
-    process_names = ["sshd", "nginx", "bash", "python3", "sudo", "curl", "systemd", "kworker", "cron"]
-    event_names = ["execve", "openat", "connect", "clone", "fork", "read", "write", "close", "setuid"]
-    
+    process_names = [
+        "sshd",
+        "nginx",
+        "bash",
+        "python3",
+        "sudo",
+        "curl",
+        "systemd",
+        "kworker",
+        "cron",
+    ]
+    event_names = [
+        "execve",
+        "openat",
+        "connect",
+        "clone",
+        "fork",
+        "read",
+        "write",
+        "close",
+        "setuid",
+    ]
+
     records = []
     for i in range(n_records):
         is_attack = np.random.rand() < 0.15
-        pname = np.random.choice(["bash", "curl", "python3", "sudo"] if is_attack else process_names)
-        ename = np.random.choice(["execve", "setuid", "connect"] if is_attack else event_names)
-        uid = 0 if (is_attack and np.random.rand() < 0.6) else np.random.choice([0, 1000, 1001])
+        pname = np.random.choice(
+            ["bash", "curl", "python3", "sudo"] if is_attack else process_names
+        )
+        ename = np.random.choice(
+            ["execve", "setuid", "connect"] if is_attack else event_names
+        )
+        uid = (
+            0
+            if (is_attack and np.random.rand() < 0.6)
+            else np.random.choice([0, 1000, 1001])
+        )
         ret_val = -1 if (is_attack and np.random.rand() < 0.3) else 0
 
-        records.append({
-            "timestamp": 1600000000 + i * 1.5,
-            "processId": np.random.randint(100, 32000),
-            "threadId": np.random.randint(100, 32000),
-            "parentProcessId": np.random.randint(1, 5000),
-            "userId": uid,
-            "mountNamespace": 4026531840,
-            "eventId": 59 if ename == "execve" else np.random.randint(1, 200),
-            "argsNum": np.random.randint(1, 6),
-            "returnValue": ret_val,
-            "processName": pname,
-            "eventName": ename,
-            "host_ip": "10.0.0.10" if is_attack else f"10.0.0.{np.random.randint(5, 50)}",
-            "suspect": 1 if is_attack else 0,
-            "evil": 1 if is_attack else 0,
-        })
+        records.append(
+            {
+                "timestamp": 1600000000 + i * 1.5,
+                "processId": np.random.randint(100, 32000),
+                "threadId": np.random.randint(100, 32000),
+                "parentProcessId": np.random.randint(1, 5000),
+                "userId": uid,
+                "mountNamespace": 4026531840,
+                "eventId": 59 if ename == "execve" else np.random.randint(1, 200),
+                "argsNum": np.random.randint(1, 6),
+                "returnValue": ret_val,
+                "processName": pname,
+                "eventName": ename,
+                "host_ip": "10.0.0.10"
+                if is_attack
+                else f"10.0.0.{np.random.randint(5, 50)}",
+                "suspect": 1 if is_attack else 0,
+                "evil": 1 if is_attack else 0,
+            }
+        )
     return pd.DataFrame(records)
 
 
-def load_beth_dataset(data_dir: Optional[Path] = None) -> pd.DataFrame:
+def load_beth_dataset(data_dir: Path | None = None) -> pd.DataFrame:
     """
     Load BETH dataset from CSV files, falling back to synthetic representative sample
     if raw Kaggle files are not yet staged.
@@ -86,14 +119,16 @@ def load_beth_dataset(data_dir: Optional[Path] = None) -> pd.DataFrame:
             df = pd.concat([df, test_df], ignore_index=True)
         return df
 
-    logger.info("BETH raw Kaggle CSV not found locally; generating representative BETH host telemetry stream.")
+    logger.info(
+        "BETH raw Kaggle CSV not found locally; generating representative BETH host telemetry stream."
+    )
     return generate_synthetic_beth_sample()
 
 
-def extract_beth_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+def extract_beth_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """
     Transform raw BETH kernel events into numerical anomaly detection features.
-    
+
     Features:
     - is_root (0/1): executed with UID 0
     - is_execve (0/1): program execution syscall
@@ -107,7 +142,9 @@ def extract_beth_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     X["is_execve"] = (df["eventName"] == "execve").astype(int)
     X["is_network"] = (df["eventName"].isin(["connect", "accept", "bind"])).astype(int)
     X["is_failed_syscall"] = (df["returnValue"] < 0).astype(int)
-    X["is_privileged_process"] = (df["processName"].isin(["sudo", "su", "pkexec"])).astype(int)
+    X["is_privileged_process"] = (
+        df["processName"].isin(["sudo", "su", "pkexec"])
+    ).astype(int)
     X["args_count"] = df["argsNum"].fillna(0).astype(int)
 
     y = df["evil"] if "evil" in df.columns else df["suspect"]
@@ -115,14 +152,14 @@ def extract_beth_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
 
 
 def correlate_host_network(
-    network_alert: Dict[str, Any],
+    network_alert: dict[str, Any],
     host_events: pd.DataFrame,
-    window_seconds: float = 60.0
-) -> Dict[str, Any]:
+    window_seconds: float = 60.0,
+) -> dict[str, Any]:
     """
     Multi-modal SOC correlation:
     Correlates an incoming network alert with host-level syscall telemetry.
-    
+
     Returns fusion metadata elevating alert severity when host compromise is confirmed.
     """
     target_ip = network_alert.get("dest_ip")
@@ -139,13 +176,19 @@ def correlate_host_network(
     execve_count = int((matching_host_events["eventName"] == "execve").sum())
     failed_count = int((matching_host_events["returnValue"] < 0).sum())
 
-    is_confirmed_compromise = malicious_count > 0 or (execve_count >= 2 and failed_count >= 1)
+    is_confirmed_compromise = malicious_count > 0 or (
+        execve_count >= 2 and failed_count >= 1
+    )
 
     return {
         "multi_modal_correlated": is_confirmed_compromise,
         "host_asset_ip": target_ip,
         "host_malicious_syscalls": malicious_count,
         "host_execve_count": execve_count,
-        "mitre_fused_technique": "T1059 (Command & Scripting Interpreter)" if is_confirmed_compromise else None,
-        "severity_escalation": "Critical - Confirmed Host Compromise" if is_confirmed_compromise else "Network Probe Only",
+        "mitre_fused_technique": "T1059 (Command & Scripting Interpreter)"
+        if is_confirmed_compromise
+        else None,
+        "severity_escalation": "Critical - Confirmed Host Compromise"
+        if is_confirmed_compromise
+        else "Network Probe Only",
     }

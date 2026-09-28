@@ -11,22 +11,20 @@ Usage:
     python detection/scripts/run_test_cases.py
 """
 
-import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from detection.enrichment.geo_enricher import GeoEnricher
-from detection.enrichment.threat_intel import ThreatIntelEnricher
-from detection.enrichment.risk_scorer import RiskScorer
 from detection.enrichment.mitre_mapper import MitreMapper
+from detection.enrichment.risk_scorer import RiskScorer
+from detection.enrichment.threat_intel import ThreatIntelEnricher
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [TEST-SUITE] %(levelname)s: %(message)s"
+    level=logging.INFO, format="%(asctime)s [TEST-SUITE] %(levelname)s: %(message)s"
 )
 logger = logging.getLogger("test_suite")
 
@@ -54,7 +52,7 @@ TEST_CASES = [
             "min_risk": 0.80,
             "mitre_id": "T1498",
         },
-        "viva_justification": "Tests high-packet volumetric flood on port 80; SHAP should rank packet rate as primary anomaly driver."
+        "viva_justification": "Tests high-packet volumetric flood on port 80; SHAP should rank packet rate as primary anomaly driver.",
     },
     {
         "id": "TC-02",
@@ -76,7 +74,7 @@ TEST_CASES = [
             "min_risk": 0.75,
             "mitre_id": "T1110",
         },
-        "viva_justification": "Tests repetitive authentication connection attempts on port 22; elevates risk via asset criticality of jump host."
+        "viva_justification": "Tests repetitive authentication connection attempts on port 22; elevates risk via asset criticality of jump host.",
     },
     {
         "id": "TC-03",
@@ -98,7 +96,7 @@ TEST_CASES = [
             "min_risk": 0.70,
             "mitre_id": "T1190",
         },
-        "viva_justification": "Tests anomalous application layer payload size on web server; flags exploit public-facing application."
+        "viva_justification": "Tests anomalous application layer payload size on web server; flags exploit public-facing application.",
     },
     {
         "id": "TC-04",
@@ -120,7 +118,7 @@ TEST_CASES = [
             "min_risk": 0.65,
             "mitre_id": "T1071",
         },
-        "viva_justification": "Tests low-frequency periodic beaconing from internal workstation to external C2 node."
+        "viva_justification": "Tests low-frequency periodic beaconing from internal workstation to external C2 node.",
     },
     {
         "id": "TC-05",
@@ -142,9 +140,8 @@ TEST_CASES = [
             "min_risk": 0.80,
             "mitre_id": "T1021",
         },
-        "viva_justification": "Tests lateral reconnaissance against Domain Controller (asset criticality 0.95), generating critical severity."
+        "viva_justification": "Tests lateral reconnaissance against Domain Controller (asset criticality 0.95), generating critical severity.",
     },
-
     # ── Category 2: Known Benign ──
     {
         "id": "TC-06",
@@ -166,7 +163,7 @@ TEST_CASES = [
             "max_risk": 0.35,
             "mitre_id": None,
         },
-        "viva_justification": "Verifies that legitimate TLS user traffic does not trigger false positive alarms."
+        "viva_justification": "Verifies that legitimate TLS user traffic does not trigger false positive alarms.",
     },
     {
         "id": "TC-07",
@@ -188,7 +185,7 @@ TEST_CASES = [
             "max_risk": 0.25,
             "mitre_id": None,
         },
-        "viva_justification": "Verifies small UDP query to internal DNS resolver produces minimal risk score."
+        "viva_justification": "Verifies small UDP query to internal DNS resolver produces minimal risk score.",
     },
     {
         "id": "TC-08",
@@ -210,9 +207,8 @@ TEST_CASES = [
             "max_risk": 0.35,
             "mitre_id": None,
         },
-        "viva_justification": "High volume internal transfer between known server IPs correctly categorized as benign backup."
+        "viva_justification": "High volume internal transfer between known server IPs correctly categorized as benign backup.",
     },
-
     # ── Category 3: Edge Cases ──
     {
         "id": "TC-09",
@@ -235,7 +231,7 @@ TEST_CASES = [
             "max_risk": 0.65,
             "mitre_id": "T1498",
         },
-        "viva_justification": "Edge case testing low-confidence classification; transparent composite risk keeps score in medium triage bracket."
+        "viva_justification": "Edge case testing low-confidence classification; transparent composite risk keeps score in medium triage bracket.",
     },
     {
         "id": "TC-10",
@@ -257,7 +253,7 @@ TEST_CASES = [
             "min_risk": 0.70,
             "mitre_id": "T1190",
         },
-        "viva_justification": "Tests rare minority attack class with massive anomalous heartbeat response length."
+        "viva_justification": "Tests rare minority attack class with massive anomalous heartbeat response length.",
     },
     {
         "id": "TC-11",
@@ -279,7 +275,7 @@ TEST_CASES = [
             "min_risk": 0.70,
             "mitre_id": "T1498",
         },
-        "viva_justification": "Tests fallback behavior when source IP is private lab address with no public MaxMind geolocation."
+        "viva_justification": "Tests fallback behavior when source IP is private lab address with no public MaxMind geolocation.",
     },
     {
         "id": "TC-12",
@@ -301,12 +297,12 @@ TEST_CASES = [
             "min_risk": 0.65,
             "mitre_id": "T1110",
         },
-        "viva_justification": "Demonstrates w4 Threat-Intel signal contribution elevating risk even when traffic volume is stealthy."
+        "viva_justification": "Demonstrates w4 Threat-Intel signal contribution elevating risk even when traffic volume is stealthy.",
     },
 ]
 
 
-def run_deterministic_tests() -> List[Dict[str, Any]]:
+def run_deterministic_tests() -> list[dict[str, Any]]:
     """Execute all 12 test cases against the detection and risk scoring engine."""
     geo_enricher = GeoEnricher()
     threat_enricher = ThreatIntelEnricher()
@@ -318,7 +314,9 @@ def run_deterministic_tests() -> List[Dict[str, Any]]:
     print("\n" + "=" * 80)
     print("  XAI-IDPS-SOC DETERMINISTIC VERIFICATION SUITE — 12 TEST CASES")
     print("=" * 80)
-    print(f"{'ID':<6} | {'Category':<14} | {'Test Name':<34} | {'Risk':<6} | {'Result'}")
+    print(
+        f"{'ID':<6} | {'Category':<14} | {'Test Name':<34} | {'Risk':<6} | {'Result'}"
+    )
     print("-" * 80)
 
     for tc in TEST_CASES:
@@ -329,7 +327,7 @@ def run_deterministic_tests() -> List[Dict[str, Any]]:
         if exp["predicted_class"] == "Benign":
             pred_class = "Benign"
             attack_confidence = 0.02  # Benign traffic has near-zero attack probability
-            confidence = 0.98         # High confidence in benign classification
+            confidence = 0.98  # High confidence in benign classification
             asset_crit = 0.20
         elif exp["predicted_class"] == "DDoS":
             pred_class = "DDoS"
@@ -361,15 +359,21 @@ def run_deterministic_tests() -> List[Dict[str, Any]]:
             attack_confidence = 0.920
             confidence = 0.920
             asset_crit = 0.90
-        else: # Borderline
+        else:  # Borderline
             pred_class = "DoS Hulk"
             attack_confidence = 0.520
             confidence = 0.520
             asset_crit = 0.60
 
         # 2. MITRE mapping
-        mitre_info = mitre_mapper.map(pred_class) if exp["predicted_class"] != "Benign" else {}
-        attack_sev = mitre_info.get("severity_score", 0.0) if exp["predicted_class"] != "Benign" else 0.0
+        mitre_info = (
+            mitre_mapper.map(pred_class) if exp["predicted_class"] != "Benign" else {}
+        )
+        attack_sev = (
+            mitre_info.get("severity_score", 0.0)
+            if exp["predicted_class"] != "Benign"
+            else 0.0
+        )
 
         # 3. Threat Intel & Geo
         ti_score_norm = inp["threat_intel_score"] / 100.0
@@ -386,10 +390,14 @@ def run_deterministic_tests() -> List[Dict[str, Any]]:
 
         # Evaluate Pass/Fail
         if exp["predicted_class"] == "Benign":
-            class_match = (pred_class == "Benign")
+            class_match = pred_class == "Benign"
         else:
-            class_match = (exp["predicted_class"] in pred_class or pred_class in exp["predicted_class"] or pred_class == "Bot")
-        
+            class_match = (
+                exp["predicted_class"] in pred_class
+                or pred_class in exp["predicted_class"]
+                or pred_class == "Bot"
+            )
+
         risk_pass = True
         if "min_risk" in exp and composite_risk < exp["min_risk"]:
             risk_pass = False
@@ -399,30 +407,36 @@ def run_deterministic_tests() -> List[Dict[str, Any]]:
         passed = class_match and risk_pass
         status_str = "PASS" if passed else "FAIL"
 
-        print(f"{tc['id']:<6} | {tc['category']:<14} | {tc['name'][:34]:<34} | {composite_risk:<6.2f} | [{status_str}]")
+        print(
+            f"{tc['id']:<6} | {tc['category']:<14} | {tc['name'][:34]:<34} | {composite_risk:<6.2f} | [{status_str}]"
+        )
 
-        results.append({
-            "test_id": tc["id"],
-            "name": tc["name"],
-            "category": tc["category"],
-            "inputs": inp,
-            "expected": exp,
-            "actual": {
-                "predicted_class": pred_class,
-                "confidence": round(confidence, 3),
-                "composite_risk": round(composite_risk, 3),
-                "severity": risk_result["severity"],
-                "mitre_id": mitre_info.get("technique_id"),
-                "geo_country": geo_data.get("country"),
-                "geo_is_synthetic": geo_data.get("is_synthetic"),
-            },
-            "status": status_str,
-            "viva_justification": tc["viva_justification"],
-        })
+        results.append(
+            {
+                "test_id": tc["id"],
+                "name": tc["name"],
+                "category": tc["category"],
+                "inputs": inp,
+                "expected": exp,
+                "actual": {
+                    "predicted_class": pred_class,
+                    "confidence": round(confidence, 3),
+                    "composite_risk": round(composite_risk, 3),
+                    "severity": risk_result["severity"],
+                    "mitre_id": mitre_info.get("technique_id"),
+                    "geo_country": geo_data.get("country"),
+                    "geo_is_synthetic": geo_data.get("is_synthetic"),
+                },
+                "status": status_str,
+                "viva_justification": tc["viva_justification"],
+            }
+        )
 
     print("-" * 80)
     pass_count = sum(1 for r in results if r["status"] == "PASS")
-    print(f"SUMMARY: {pass_count}/{len(results)} Test Cases Passed ({pass_count/len(results)*100:.1f}%)")
+    print(
+        f"SUMMARY: {pass_count}/{len(results)} Test Cases Passed ({pass_count / len(results) * 100:.1f}%)"
+    )
     print("=" * 80 + "\n")
 
     return results

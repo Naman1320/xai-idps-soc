@@ -10,7 +10,7 @@ Handles:
 
 import logging
 import os
-from typing import List, Dict, Any
+from typing import Any
 
 import httpx
 from dotenv import load_dotenv
@@ -32,7 +32,9 @@ class AlertForwarder:
         timeout: float = 10.0,
         max_retries: int = 3,
     ):
-        self.backend_url = backend_url or os.getenv("SOC_BACKEND_URL", "http://localhost:8000/api/v1")
+        self.backend_url = backend_url or os.getenv(
+            "SOC_BACKEND_URL", "http://localhost:8000/api/v1"
+        )
         self.api_key = api_key or os.getenv("INGESTION_API_KEY", "dev-api-key")
         self.timeout = timeout
         self.max_retries = max_retries
@@ -44,7 +46,7 @@ class AlertForwarder:
 
         logger.info(f"Alert forwarder initialized: {self.backend_url}")
 
-    def send_alert(self, alert: Dict[str, Any]) -> bool:
+    def send_alert(self, alert: dict[str, Any]) -> bool:
         """
         Send a single alert to the SOC backend.
 
@@ -75,12 +77,16 @@ class AlertForwarder:
                     f"SOC backend not reachable at {url}"
                 )
             except Exception as e:
-                logger.error(f"Alert send error (attempt {attempt}/{self.max_retries}): {e}")
+                logger.error(
+                    f"Alert send error (attempt {attempt}/{self.max_retries}): {e}"
+                )
 
-        logger.error(f"Alert {alert['alert_id']} failed after {self.max_retries} attempts")
+        logger.error(
+            f"Alert {alert['alert_id']} failed after {self.max_retries} attempts"
+        )
         return False
 
-    def send_batch(self, alerts: List[Dict[str, Any]]) -> Dict[str, int]:
+    def send_batch(self, alerts: list[dict[str, Any]]) -> dict[str, int]:
         """
         Send a batch of alerts to the SOC backend.
 
@@ -99,5 +105,7 @@ class AlertForwarder:
             else:
                 failed += 1
 
-        logger.info(f"Batch complete: {sent} sent, {failed} failed out of {len(alerts)}")
+        logger.info(
+            f"Batch complete: {sent} sent, {failed} failed out of {len(alerts)}"
+        )
         return {"sent": sent, "failed": failed}

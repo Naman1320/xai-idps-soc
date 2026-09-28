@@ -4,21 +4,20 @@ Provides alert map data, country summaries, and threat-intel summaries
 for the SOC dashboard Geo Map page.
 """
 
-from typing import Optional
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
 
 from app.database import get_db
 from app.models.alert import Alert
 from app.schemas.alert_schema import (
-    GeoAlertMapEntry,
-    GeoAlertsMapResponse,
     CountrySummaryEntry,
     CountrySummaryResponse,
+    GeoAlertMapEntry,
+    GeoAlertsMapResponse,
     ThreatIntelSummaryEntry,
     ThreatIntelSummaryResponse,
 )
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import desc, func
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/geo", tags=["Geolocation & Threat Intel"])
 
@@ -33,9 +32,9 @@ GEO_CAVEAT = (
 @router.get("/alerts-map", response_model=GeoAlertsMapResponse)
 def get_alerts_map(
     limit: int = Query(500, ge=1, le=5000, description="Max alerts to return"),
-    min_risk: Optional[float] = Query(None, ge=0.0, le=1.0),
-    attack_class: Optional[str] = Query(None),
-    country: Optional[str] = Query(None),
+    min_risk: float | None = Query(None, ge=0.0, le=1.0),
+    attack_class: str | None = Query(None),
+    country: str | None = Query(None),
     known_bad_only: bool = Query(False, description="Only show known-bad IPs"),
     db: Session = Depends(get_db),
 ):
@@ -61,23 +60,25 @@ def get_alerts_map(
 
     entries = []
     for a in alerts:
-        entries.append(GeoAlertMapEntry(
-            alert_id=a.id,
-            source_ip=a.source_ip,
-            attack_class=a.attack_class,
-            risk_score=a.risk_score,
-            mitre_severity=a.mitre_severity,
-            latitude=a.geo_source_lat,
-            longitude=a.geo_source_lon,
-            country=a.geo_source_country,
-            country_code=a.geo_source_country_code,
-            city=a.geo_source_city,
-            asn_org=a.geo_source_asn_org,
-            threat_intel_score=a.threat_intel_score,
-            is_known_bad=a.threat_intel_is_known_bad or False,
-            is_synthetic=a.geo_is_synthetic or False,
-            detected_at=a.detected_at,
-        ))
+        entries.append(
+            GeoAlertMapEntry(
+                alert_id=a.id,
+                source_ip=a.source_ip,
+                attack_class=a.attack_class,
+                risk_score=a.risk_score,
+                mitre_severity=a.mitre_severity,
+                latitude=a.geo_source_lat,
+                longitude=a.geo_source_lon,
+                country=a.geo_source_country,
+                country_code=a.geo_source_country_code,
+                city=a.geo_source_city,
+                asn_org=a.geo_source_asn_org,
+                threat_intel_score=a.threat_intel_score,
+                is_known_bad=a.threat_intel_is_known_bad or False,
+                is_synthetic=a.geo_is_synthetic or False,
+                detected_at=a.detected_at,
+            )
+        )
 
     return GeoAlertsMapResponse(
         alerts=entries,
@@ -113,15 +114,18 @@ def get_country_summary(db: Session = Depends(get_db)):
                 Alert.geo_source_country == row[0],
                 Alert.threat_intel_is_known_bad == True,
             )
-            .scalar() or 0
+            .scalar()
+            or 0
         )
-        countries.append(CountrySummaryEntry(
-            country=row[0] or "Unknown",
-            country_code=row[1],
-            alert_count=row[2],
-            avg_risk_score=round(row[3] or 0, 4),
-            known_bad_count=known_bad,
-        ))
+        countries.append(
+            CountrySummaryEntry(
+                country=row[0] or "Unknown",
+                country_code=row[1],
+                alert_count=row[2],
+                avg_risk_score=round(row[3] or 0, 4),
+                known_bad_count=known_bad,
+            )
+        )
 
     return CountrySummaryResponse(
         countries=countries,
@@ -171,14 +175,16 @@ def get_threat_intel_summary(
         alert_count = row[3]
         total_alerts += alert_count
 
-        entries.append(ThreatIntelSummaryEntry(
-            source_ip=row[0],
-            abuse_confidence_score=row[1] or 0,
-            total_reports=row[2] or 0,
-            alert_count=alert_count,
-            attack_classes=classes,
-            country=row[4],
-        ))
+        entries.append(
+            ThreatIntelSummaryEntry(
+                source_ip=row[0],
+                abuse_confidence_score=row[1] or 0,
+                total_reports=row[2] or 0,
+                alert_count=alert_count,
+                attack_classes=classes,
+                country=row[4],
+            )
+        )
 
     return ThreatIntelSummaryResponse(
         known_bad_ips=entries,

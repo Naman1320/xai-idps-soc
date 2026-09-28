@@ -3,7 +3,7 @@ Authentication schemas for JWT token generation and login.
 """
 
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -15,8 +15,8 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
-    role: Optional[str] = None
+    username: str | None = None
+    role: str | None = None
 
 
 class UserLogin(BaseModel):
@@ -44,8 +44,7 @@ class UserResponse(BaseModel):
     id: str
     username: str
     role: str
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
-

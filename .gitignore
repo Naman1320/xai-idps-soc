@@ -13,8 +13,14 @@ venv/
 # Data files (too large for git)
 detection/data/raw/
 detection/data/processed/
+detection/data/models/**/*.joblib
+detection/data/models/**/*.pkl
 detection/data/models/*.joblib
 detection/data/models/*.pkl
+data
+data/
+data_clean/
+dataset_scan_report.csv
 !detection/data/raw/.gitkeep
 !detection/data/processed/.gitkeep
 !detection/data/models/.gitkeep

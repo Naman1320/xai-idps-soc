@@ -8,7 +8,7 @@ central contribution.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import shap
@@ -24,7 +24,7 @@ class ShapExplainer:
     into a JSON-friendly format for the SOC backend.
     """
 
-    def __init__(self, model, feature_names: List[str]):
+    def __init__(self, model, feature_names: list[str]):
         """
         Args:
             model: A fitted tree-based model (RF, XGBoost, LightGBM).
@@ -39,7 +39,7 @@ class ShapExplainer:
         X_single: np.ndarray,
         predicted_class_idx: int,
         top_n: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate SHAP explanation for a single prediction.
 
@@ -84,12 +84,14 @@ class ShapExplainer:
         sorted_indices = np.argsort(np.abs(class_shap))[::-1]
 
         for idx in sorted_indices[:top_n]:
-            contributions.append({
-                "feature": self.feature_names[idx],
-                "shap_value": float(class_shap[idx]),
-                "feature_value": float(X_single[0, idx]),
-                "rank": len(contributions) + 1,
-            })
+            contributions.append(
+                {
+                    "feature": self.feature_names[idx],
+                    "shap_value": float(class_shap[idx]),
+                    "feature_value": float(X_single[0, idx]),
+                    "rank": len(contributions) + 1,
+                }
+            )
 
         return {
             "base_value": float(base_value),
@@ -102,7 +104,7 @@ class ShapExplainer:
         X_batch: np.ndarray,
         predicted_class_indices: np.ndarray,
         top_n: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Generate SHAP explanations for a batch of predictions.
 

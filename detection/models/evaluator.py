@@ -11,16 +11,15 @@ Produces:
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
+    average_precision_score,
     classification_report,
     confusion_matrix,
     precision_recall_fscore_support,
-    average_precision_score,
-    roc_auc_score,
 )
 from sklearn.preprocessing import LabelBinarizer
 
@@ -30,21 +29,21 @@ logger = logging.getLogger(__name__)
 class ModelEvaluator:
     """Compute and store comprehensive evaluation metrics."""
 
-    def __init__(self, class_names: List[str]):
+    def __init__(self, class_names: list[str]):
         """
         Args:
             class_names: List of class names (from LabelEncoder.classes_).
         """
         self.class_names = class_names
-        self.results: Dict[str, Any] = {}
+        self.results: dict[str, Any] = {}
 
     def evaluate(
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        y_proba: Optional[np.ndarray] = None,
+        y_proba: np.ndarray | None = None,
         model_name: str = "model",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run full evaluation suite.
 
@@ -61,7 +60,8 @@ class ModelEvaluator:
 
         # Classification report
         report = classification_report(
-            y_true, y_pred,
+            y_true,
+            y_pred,
             target_names=self.class_names,
             output_dict=True,
             zero_division=0,
@@ -141,7 +141,7 @@ class ModelEvaluator:
 
         return results
 
-    def _compute_fpr_per_class(self, cm: np.ndarray) -> Dict[int, float]:
+    def _compute_fpr_per_class(self, cm: np.ndarray) -> dict[int, float]:
         """Compute FPR for each class from confusion matrix."""
         n_classes = cm.shape[0]
         fpr = {}
@@ -164,14 +164,18 @@ class ModelEvaluator:
         per_class = self.results[model_name]["per_class"]
         rows = []
         for class_name, metrics in per_class.items():
-            rows.append({
-                "Class": class_name,
-                "Precision": f"{metrics['precision']:.4f}",
-                "Recall": f"{metrics['recall']:.4f}",
-                "F1-Score": f"{metrics['f1_score']:.4f}",
-                "FPR": f"{metrics['fpr']:.4f}" if metrics['fpr'] is not None else "N/A",
-                "Support": metrics["support"],
-            })
+            rows.append(
+                {
+                    "Class": class_name,
+                    "Precision": f"{metrics['precision']:.4f}",
+                    "Recall": f"{metrics['recall']:.4f}",
+                    "F1-Score": f"{metrics['f1_score']:.4f}",
+                    "FPR": f"{metrics['fpr']:.4f}"
+                    if metrics["fpr"] is not None
+                    else "N/A",
+                    "Support": metrics["support"],
+                }
+            )
 
         return pd.DataFrame(rows)
 
@@ -179,11 +183,17 @@ class ModelEvaluator:
         """Compare all evaluated models side by side."""
         rows = []
         for name, res in self.results.items():
-            rows.append({
-                "Model": name,
-                "Macro F1": f"{res['macro_f1']:.4f}",
-                "Weighted F1": f"{res['weighted_f1']:.4f}",
-                "Overall FPR": f"{res['overall_fpr']:.4f}" if res['overall_fpr'] is not None else "N/A",
-                "PR-AUC": f"{res['pr_auc']:.4f}" if res['pr_auc'] is not None else "N/A",
-            })
+            rows.append(
+                {
+                    "Model": name,
+                    "Macro F1": f"{res['macro_f1']:.4f}",
+                    "Weighted F1": f"{res['weighted_f1']:.4f}",
+                    "Overall FPR": f"{res['overall_fpr']:.4f}"
+                    if res["overall_fpr"] is not None
+                    else "N/A",
+                    "PR-AUC": f"{res['pr_auc']:.4f}"
+                    if res["pr_auc"] is not None
+                    else "N/A",
+                }
+            )
         return pd.DataFrame(rows)

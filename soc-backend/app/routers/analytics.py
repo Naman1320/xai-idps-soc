@@ -2,17 +2,16 @@
 Analytics endpoints for SOC operational intelligence and evaluation metrics.
 """
 
-from typing import List
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.analytics_schema import (
-    AnalyticsSummary,
     AnalyticsMetricsResponse,
+    AnalyticsSummary,
     TimelineDataPoint,
 )
 from app.services.analytics_service import AnalyticsService
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -23,7 +22,7 @@ def get_analytics_summary(db: Session = Depends(get_db)):
     return AnalyticsService.get_summary(db)
 
 
-@router.get("/timeline", response_model=List[TimelineDataPoint])
+@router.get("/timeline", response_model=list[TimelineDataPoint])
 def get_timeline(hours: int = Query(48, ge=12, le=168), db: Session = Depends(get_db)):
     """Retrieve time-series alert frequency grouped into severity intervals."""
     return AnalyticsService.get_timeline(db, hours=hours)

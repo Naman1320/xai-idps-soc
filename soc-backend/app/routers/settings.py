@@ -3,16 +3,15 @@ Settings endpoints for tuning composite risk scoring weights,
 alert thresholds, and reading asset inventories.
 """
 
-from typing import List
-from fastapi import APIRouter, HTTPException, status
 
 from app.config import settings
 from app.schemas.settings_schema import (
-    ScoringWeightsUpdate,
-    ThresholdsUpdate,
     AssetInventoryItem,
+    ScoringWeightsUpdate,
     SettingsResponse,
+    ThresholdsUpdate,
 )
+from fastapi import APIRouter, HTTPException, status
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -26,18 +25,74 @@ runtime_weights = {
 
 runtime_thresholds = {
     "min_confidence": 0.50,
-    "min_risk_score": settings.MIN_RISK_SCORE_ALERT
+    "min_risk_score": settings.MIN_RISK_SCORE_ALERT,
 }
 
 demo_assets = [
-    AssetInventoryItem(ip="10.0.0.5", hostname="dc01.corp.local", role="Domain Controller", criticality=0.95, os="Windows Server 2022", environment="DMZ/Core"),
-    AssetInventoryItem(ip="10.0.0.10", hostname="web-prod-01", role="Web Server (NGINX)", criticality=0.90, os="Ubuntu 22.04 LTS", environment="DMZ"),
-    AssetInventoryItem(ip="10.0.0.15", hostname="bastion-ssh", role="Management Jump Host", criticality=0.85, os="Debian 12", environment="Management"),
-    AssetInventoryItem(ip="10.0.0.20", hostname="ftp-repo-01", role="Internal File Server", criticality=0.70, os="Ubuntu 20.04 LTS", environment="Internal"),
-    AssetInventoryItem(ip="10.0.0.25", hostname="sql-cluster-01", role="Database Server", criticality=0.90, os="RHEL 9", environment="Backend"),
-    AssetInventoryItem(ip="10.0.0.32", hostname="workstation-admin", role="Admin Workstation", criticality=0.75, os="Windows 11 Enterprise", environment="Corporate LAN"),
-    AssetInventoryItem(ip="10.0.0.45", hostname="dev-node-03", role="CI/CD Build Runner", criticality=0.60, os="Ubuntu 22.04 LTS", environment="Engineering"),
-    AssetInventoryItem(ip="10.0.0.50", hostname="dns-cache-01", role="DNS Resolver", criticality=0.80, os="Alpine Linux", environment="Core Network"),
+    AssetInventoryItem(
+        ip="10.0.0.5",
+        hostname="dc01.corp.local",
+        role="Domain Controller",
+        criticality=0.95,
+        os="Windows Server 2022",
+        environment="DMZ/Core",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.10",
+        hostname="web-prod-01",
+        role="Web Server (NGINX)",
+        criticality=0.90,
+        os="Ubuntu 22.04 LTS",
+        environment="DMZ",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.15",
+        hostname="bastion-ssh",
+        role="Management Jump Host",
+        criticality=0.85,
+        os="Debian 12",
+        environment="Management",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.20",
+        hostname="ftp-repo-01",
+        role="Internal File Server",
+        criticality=0.70,
+        os="Ubuntu 20.04 LTS",
+        environment="Internal",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.25",
+        hostname="sql-cluster-01",
+        role="Database Server",
+        criticality=0.90,
+        os="RHEL 9",
+        environment="Backend",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.32",
+        hostname="workstation-admin",
+        role="Admin Workstation",
+        criticality=0.75,
+        os="Windows 11 Enterprise",
+        environment="Corporate LAN",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.45",
+        hostname="dev-node-03",
+        role="CI/CD Build Runner",
+        criticality=0.60,
+        os="Ubuntu 22.04 LTS",
+        environment="Engineering",
+    ),
+    AssetInventoryItem(
+        ip="10.0.0.50",
+        hostname="dns-cache-01",
+        role="DNS Resolver",
+        criticality=0.80,
+        os="Alpine Linux",
+        environment="Core Network",
+    ),
 ]
 
 
@@ -47,7 +102,7 @@ def get_settings():
     return SettingsResponse(
         weights=ScoringWeightsUpdate(**runtime_weights),
         thresholds=ThresholdsUpdate(**runtime_thresholds),
-        assets=demo_assets
+        assets=demo_assets,
     )
 
 
@@ -62,7 +117,7 @@ def update_weights(weights_data: ScoringWeightsUpdate):
     if not (0.95 <= total <= 1.05):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Weights must sum to 1.0 (current sum: {total:.2f})"
+            detail=f"Weights must sum to 1.0 (current sum: {total:.2f})",
         )
 
     runtime_weights["w1"] = weights_data.w1
@@ -72,7 +127,7 @@ def update_weights(weights_data: ScoringWeightsUpdate):
     return weights_data
 
 
-@router.get("/assets", response_model=List[AssetInventoryItem])
+@router.get("/assets", response_model=list[AssetInventoryItem])
 def get_assets():
     """Retrieve network asset inventory with IP and criticality ratings."""
     return demo_assets

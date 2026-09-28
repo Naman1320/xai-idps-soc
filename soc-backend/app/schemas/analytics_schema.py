@@ -2,7 +2,8 @@
 Analytics schemas for metrics, summary stats, and ATT&CK coverage.
 """
 
-from typing import Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -45,8 +46,12 @@ class AnalyticsSummary(BaseModel):
     average_risk_score: float
     false_positive_rate: float
     status_breakdown: StatusBreakdown
-    attack_classes: List[AttackClassCount]
-    top_mitre_techniques: List[MitreTechniqueStat]
+    attack_classes: list[AttackClassCount]
+    top_mitre_techniques: list[MitreTechniqueStat]
+    domain_breakdown: dict[str, Any] | None = None
+    dataset_breakdown: dict[str, int] | None = None
+    dataset_health: list[dict[str, Any]] | None = None
+    kpi: dict[str, Any] | None = None
 
 
 class ModelEvaluationMetric(BaseModel):
@@ -63,4 +68,4 @@ class AnalyticsMetricsResponse(BaseModel):
     ingestion_latency_ms: float
     precision_at_10: float
     precision_at_50: float
-    evaluation_metrics: List[ModelEvaluationMetric]
+    evaluation_metrics: list[ModelEvaluationMetric]

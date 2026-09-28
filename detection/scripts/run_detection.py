@@ -23,9 +23,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import joblib
 import numpy as np
 
-from detection.preprocessing.preprocessor import DataPreprocessor, MODELS_DIR
 from detection.pipeline import DetectionPipeline
 from detection.pipeline.alert_forwarder import AlertForwarder
+from detection.preprocessing.preprocessor import MODELS_DIR, DataPreprocessor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -104,8 +104,8 @@ def main():
     y_test = splits["y_test"]
 
     if args.limit:
-        X_test = X_test[:args.limit]
-        y_test = y_test[:args.limit]
+        X_test = X_test[: args.limit]
+        y_test = y_test[: args.limit]
 
     logger.info(f"Test set: {len(X_test)} flows")
 
@@ -125,9 +125,13 @@ def main():
 
     # Generate synthetic IPs for demo (since datasets don't include IPs after preprocessing)
     np.random.seed(42)
-    source_ips = [f"192.168.1.{np.random.randint(100, 200)}" for _ in range(len(X_test))]
+    source_ips = [
+        f"192.168.1.{np.random.randint(100, 200)}" for _ in range(len(X_test))
+    ]
     dest_ips = [f"192.168.1.{np.random.randint(1, 20)}" for _ in range(len(X_test))]
-    dest_ports = [np.random.choice([22, 80, 443, 3306, 8080]) for _ in range(len(X_test))]
+    dest_ports = [
+        np.random.choice([22, 80, 443, 3306, 8080]) for _ in range(len(X_test))
+    ]
 
     # Run pipeline
     logger.info("Running detection pipeline...")
@@ -141,34 +145,44 @@ def main():
     )
 
     elapsed = time.time() - start_time
-    logger.info(f"\nPipeline results:")
+    logger.info("\nPipeline results:")
     logger.info(f"  Flows processed: {len(X_test)}")
     logger.info(f"  Alerts generated: {len(alerts)}")
     logger.info(f"  Total time: {elapsed:.2f}s")
-    logger.info(f"  Throughput: {len(X_test)/max(elapsed, 0.001):.0f} flows/sec")
+    logger.info(f"  Throughput: {len(X_test) / max(elapsed, 0.001):.0f} flows/sec")
 
     # Show sample alerts
     if alerts:
-        logger.info(f"\n--- Sample Alert ---")
+        logger.info("\n--- Sample Alert ---")
         sample = alerts[0]
         logger.info(f"  Attack: {sample['classification']['attack_class']}")
         logger.info(f"  Confidence: {sample['classification']['confidence']:.3f}")
-        logger.info(f"  Risk Score: {sample['risk_score']['composite']:.3f} ({sample['risk_score']['severity']})")
-        logger.info(f"  MITRE: {sample['mitre_mapping']['technique_id']} - {sample['mitre_mapping']['technique_name']}")
-        
+        logger.info(
+            f"  Risk Score: {sample['risk_score']['composite']:.3f} ({sample['risk_score']['severity']})"
+        )
+        logger.info(
+            f"  MITRE: {sample['mitre_mapping']['technique_id']} - {sample['mitre_mapping']['technique_name']}"
+        )
+
         # Display Geo context if present
         if "geo_context" in sample and "source" in sample["geo_context"]:
             geo_src = sample["geo_context"]["source"]
-            logger.info(f"  Geo Source: {geo_src.get('city')}, {geo_src.get('country')} (ASN {geo_src.get('asn')} - {geo_src.get('asn_org')})")
-        
+            logger.info(
+                f"  Geo Source: {geo_src.get('city')}, {geo_src.get('country')} (ASN {geo_src.get('asn')} - {geo_src.get('asn_org')})"
+            )
+
         # Display Threat Intel if present
         if "threat_intel" in sample and "source_ip" in sample["threat_intel"]:
             ti = sample["threat_intel"]["source_ip"]
-            logger.info(f"  Threat Intel: Abuse Score {ti.get('abuse_confidence_score')} | Known Bad: {ti.get('is_known_bad')} (Provider: {ti.get('provider')})")
+            logger.info(
+                f"  Threat Intel: Abuse Score {ti.get('abuse_confidence_score')} | Known Bad: {ti.get('is_known_bad')} (Provider: {ti.get('provider')})"
+            )
 
-        logger.info(f"  Top SHAP features:")
-        for feat in sample['shap_explanation']['feature_contributions'][:3]:
-            logger.info(f"    {feat['feature']}: SHAP={feat['shap_value']:.4f} (value={feat['feature_value']:.4f})")
+        logger.info("  Top SHAP features:")
+        for feat in sample["shap_explanation"]["feature_contributions"][:3]:
+            logger.info(
+                f"    {feat['feature']}: SHAP={feat['shap_value']:.4f} (value={feat['feature_value']:.4f})"
+            )
 
     # Save alerts to file
     if args.output:

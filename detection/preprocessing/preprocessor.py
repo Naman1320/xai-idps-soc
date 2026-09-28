@@ -11,13 +11,12 @@ Handles:
 
 import logging
 from pathlib import Path
-from typing import Tuple, List, Optional, Dict, Any
 
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 logger = logging.getLogger(__name__)
 
@@ -27,24 +26,45 @@ MODELS_DIR = PROJECT_ROOT / "data" / "models"
 
 # Columns to always drop (identifiers, not features)
 COLUMNS_TO_DROP_CICIDS = [
-    "Flow ID", "Source IP", "Source Port", "Destination IP",
-    "Destination Port", "Timestamp", "Label",
+    "Flow ID",
+    "Source IP",
+    "Source Port",
+    "Destination IP",
+    "Destination Port",
+    "Timestamp",
+    "Label",
     # Also drop these if they exist with spaces
-    " Flow ID", " Source IP", " Source Port", " Destination IP",
-    " Destination Port", " Timestamp",
+    " Flow ID",
+    " Source IP",
+    " Source Port",
+    " Destination IP",
+    " Destination Port",
+    " Timestamp",
 ]
 
 # Columns to always drop from UNSW-NB15
 COLUMNS_TO_DROP_UNSW = [
-    "id", "label", "attack_cat",
-    "srcip", "sport", "dstip", "dsport",
+    "id",
+    "label",
+    "attack_cat",
+    "srcip",
+    "sport",
+    "dstip",
+    "dsport",
 ]
 
 # Columns to always drop from CSE-CIC-IDS2018
 COLUMNS_TO_DROP_CIC_IDS2018 = [
-    "Dst Port", "Timestamp", "Label", "Flow ID",
-    "Src IP", "Src Port", "Dst IP", "Destination Port",
-    "Source IP", "Source Port",
+    "Dst Port",
+    "Timestamp",
+    "Label",
+    "Flow ID",
+    "Src IP",
+    "Src Port",
+    "Dst IP",
+    "Destination Port",
+    "Source IP",
+    "Source Port",
 ]
 
 
@@ -70,10 +90,14 @@ class DataPreprocessor:
             dataset_name: 'cicids2017', 'cic_ids2018' (or 'cse_cic_ids2018'), or 'unsw_nb15'.
         """
         self.dataset_name = dataset_name
-        self.scaler: Optional[StandardScaler] = None
-        self.label_encoder: Optional[LabelEncoder] = None
-        self.feature_names: List[str] = []
-        self.label_col: str = "Label" if dataset_name in ("cicids2017", "cic_ids2018", "cse_cic_ids2018") else "attack_cat"
+        self.scaler: StandardScaler | None = None
+        self.label_encoder: LabelEncoder | None = None
+        self.feature_names: list[str] = []
+        self.label_col: str = (
+            "Label"
+            if dataset_name in ("cicids2017", "cic_ids2018", "cse_cic_ids2018")
+            else "attack_cat"
+        )
         if dataset_name in ("cic_ids2018", "cse_cic_ids2018"):
             self.columns_to_drop = COLUMNS_TO_DROP_CIC_IDS2018
         elif dataset_name == "cicids2017":
@@ -87,7 +111,7 @@ class DataPreprocessor:
         remove_constant: bool = True,
         remove_high_corr: bool = False,
         corr_threshold: float = 0.95,
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Extract features (X) and labels (y) from raw DataFrame.
 
@@ -117,7 +141,9 @@ class DataPreprocessor:
             variance = X.var()
             constant_cols = variance[variance < 1e-10].index.tolist()
             if constant_cols:
-                logger.info(f"Removing {len(constant_cols)} constant/near-constant features: {constant_cols[:5]}...")
+                logger.info(
+                    f"Removing {len(constant_cols)} constant/near-constant features: {constant_cols[:5]}..."
+                )
                 X = X.drop(columns=constant_cols)
 
         # Remove highly correlated features (optional, can be slow for large datasets)
@@ -143,7 +169,7 @@ class DataPreprocessor:
 
     def fit_transform(
         self, X: pd.DataFrame, y: pd.Series
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Fit scaler and label encoder on training data, then transform.
 
@@ -167,7 +193,7 @@ class DataPreprocessor:
 
         return X_scaled, y_encoded
 
-    def transform(self, X: pd.DataFrame, y: pd.Series) -> Tuple[np.ndarray, np.ndarray]:
+    def transform(self, X: pd.DataFrame, y: pd.Series) -> tuple[np.ndarray, np.ndarray]:
         """
         Transform using already-fitted scaler and label encoder.
 
@@ -204,7 +230,7 @@ class DataPreprocessor:
         test_size: float = 0.15,
         val_size: float = 0.15,
         random_state: int = 42,
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """
         Stratified split into train/validation/test sets.
 
@@ -220,7 +246,8 @@ class DataPreprocessor:
         """
         # First split: train+val vs test
         X_temp, X_test, y_temp, y_test = train_test_split(
-            X, y,
+            X,
+            y,
             test_size=test_size,
             random_state=random_state,
             stratify=y,
@@ -229,7 +256,8 @@ class DataPreprocessor:
         # Second split: train vs val (adjust val_size relative to remaining data)
         val_relative = val_size / (1 - test_size)
         X_train, X_val, y_train, y_val = train_test_split(
-            X_temp, y_temp,
+            X_temp,
+            y_temp,
             test_size=val_relative,
             random_state=random_state,
             stratify=y_temp,
@@ -237,16 +265,19 @@ class DataPreprocessor:
 
         logger.info(
             f"Split: train={len(X_train)}, val={len(X_val)}, test={len(X_test)} "
-            f"({len(X_train)/len(X)*100:.1f}%/{len(X_val)/len(X)*100:.1f}%/{len(X_test)/len(X)*100:.1f}%)"
+            f"({len(X_train) / len(X) * 100:.1f}%/{len(X_val) / len(X) * 100:.1f}%/{len(X_test) / len(X) * 100:.1f}%)"
         )
 
         return {
-            "X_train": X_train, "y_train": y_train,
-            "X_val": X_val, "y_val": y_val,
-            "X_test": X_test, "y_test": y_test,
+            "X_train": X_train,
+            "y_train": y_train,
+            "X_val": X_val,
+            "y_val": y_val,
+            "X_test": X_test,
+            "y_test": y_test,
         }
 
-    def save_artifacts(self, output_dir: Optional[Path] = None) -> None:
+    def save_artifacts(self, output_dir: Path | None = None) -> None:
         """Save preprocessing artifacts (scaler, label_encoder, feature_names)."""
         if output_dir is None:
             output_dir = PROCESSED_DATA_DIR / self.dataset_name
@@ -258,7 +289,7 @@ class DataPreprocessor:
 
         logger.info(f"Preprocessing artifacts saved to {output_dir}")
 
-    def load_artifacts(self, input_dir: Optional[Path] = None) -> None:
+    def load_artifacts(self, input_dir: Path | None = None) -> None:
         """Load preprocessing artifacts."""
         if input_dir is None:
             input_dir = PROCESSED_DATA_DIR / self.dataset_name
@@ -270,7 +301,7 @@ class DataPreprocessor:
         logger.info(f"Preprocessing artifacts loaded from {input_dir}")
 
     def save_splits(
-        self, splits: Dict[str, np.ndarray], output_dir: Optional[Path] = None
+        self, splits: dict[str, np.ndarray], output_dir: Path | None = None
     ) -> None:
         """Save train/val/test splits as .npy files."""
         if output_dir is None:
@@ -281,9 +312,7 @@ class DataPreprocessor:
             np.save(output_dir / f"{name}.npy", array)
             logger.info(f"Saved {name}: shape={array.shape}")
 
-    def load_splits(
-        self, input_dir: Optional[Path] = None
-    ) -> Dict[str, np.ndarray]:
+    def load_splits(self, input_dir: Path | None = None) -> dict[str, np.ndarray]:
         """Load train/val/test splits from .npy files."""
         if input_dir is None:
             input_dir = PROCESSED_DATA_DIR / self.dataset_name

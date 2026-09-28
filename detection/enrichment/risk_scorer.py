@@ -23,7 +23,7 @@ original behavior.
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 import yaml
 
@@ -39,7 +39,7 @@ class RiskScorer:
     Supports both the original 3-weight and extended 4-weight formulas.
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         if config_path is None:
             config_path = CONFIG_DIR / "scoring_weights.yaml"
 
@@ -79,11 +79,15 @@ class RiskScorer:
         self,
         ml_confidence: float,
         asset_criticality: float,
-        attack_severity_score: Optional[float] = None,
+        attack_severity_score: float | None = None,
         threat_intel_score: float = 0.0,
-        attack_severity: Optional[float] = None,
-    ) -> Dict[str, Any]:
-        severity_score = attack_severity if attack_severity is not None else (attack_severity_score or 0.5)
+        attack_severity: float | None = None,
+    ) -> dict[str, Any]:
+        severity_score = (
+            attack_severity
+            if attack_severity is not None
+            else (attack_severity_score or 0.5)
+        )
         """
         Compute composite risk score with full breakdown.
 
